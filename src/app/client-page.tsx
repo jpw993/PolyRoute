@@ -62,7 +62,7 @@ export default function ClientPage() {
   let advantagePercentage: number | null = null;
   let endTokenSymbolForAdvantage: string | undefined;
 
-  if (optimalRoute && directRoute && directRoute.estimatedOutput > 0) {
+  if (optimalRoute && directRoute && directRoute.estimatedOutput > 0 && optimalRoute.estimatedOutput > directRoute.estimatedOutput) {
     advantageAmount = optimalRoute.estimatedOutput - directRoute.estimatedOutput;
     advantagePercentage = (advantageAmount / directRoute.estimatedOutput) * 100;
     endTokenSymbolForAdvantage = optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol;
@@ -82,7 +82,7 @@ export default function ClientPage() {
       )}
 
       {directRoute && (
-         <div className="max-w-full mx-auto space-y-6">
+         <div className="flex justify-center max-w-full mx-auto space-y-6">
           <RouteDiagram 
             title="Direct Route (1 DEX)"
             startToken={currentStartToken} 
