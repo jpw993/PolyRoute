@@ -1,6 +1,6 @@
-# RouteAI
+# PolyRoute
 
-RouteAI is a Next.js application designed to find the optimal swap route for token conversions on the Polygon Blockchain. It leverages AI to analyze different DEXes and provide users with the most efficient trading paths.
+PolyRoute is a Next.js application designed to find the optimal swap route for token conversions on the Polygon Blockchain. It leverages AI to analyze different DEXes and provide users with the most efficient trading paths.
 
 ## Core Features
 
