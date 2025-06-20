@@ -33,6 +33,7 @@ export default function ClientPage() {
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
   const { toast } = useToast();
 
+  const directLoadingSectionRef = useRef<HTMLDivElement>(null);
   const directRouteDiagramRef = useRef<HTMLDivElement>(null);
   const optimalRouteDiagramRef = useRef<HTMLDivElement>(null);
 
@@ -56,6 +57,11 @@ export default function ClientPage() {
     setOptimalRouteData(undefined);
     setCurrentStartToken(values.fromToken.toUpperCase());
     setCurrentInputAmount(values.amount);
+
+    // Scroll to loading animation for direct route
+    setTimeout(() => {
+      directLoadingSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
 
     const routeInput: RouteCalculationInput = {
       startToken: values.fromToken.toUpperCase(),
@@ -81,7 +87,15 @@ export default function ClientPage() {
       setIsLoadingDirect(false);
     }
 
-    if (!error || (error && !error.startsWith("Failed to find direct route:"))) {
+    // Check if there was an error specifically with direct route calculation before proceeding
+    let proceedToOptimal = true;
+    if (error && error.startsWith("Failed to find direct route:")) {
+        proceedToOptimal = false;
+    }
+    // Also, if fetchedDirectRoute is null and we are not in an error state (e.g. silent failure from API),
+    // we might still want to proceed, or handle it. For now, proceed if no explicit error.
+
+    if (proceedToOptimal) {
       setIsLoadingOptimal(true);
       try {
         const optimalInput: OptimalRouteCalculationInput = {
@@ -130,12 +144,14 @@ export default function ClientPage() {
          </Alert>
       )}
       
-      {isLoadingDirect && (
-        <div className="flex flex-col justify-center items-center py-10">
-          <GraphSearchAnimation className="h-40 w-40 text-primary" />
-          <p className="mt-3 text-lg text-muted-foreground">Searching for Direct Routes...</p>
-        </div>
-      )}
+      <div ref={directLoadingSectionRef}>
+        {isLoadingDirect && (
+          <div className="flex flex-col justify-center items-center py-10">
+            <GraphSearchAnimation className="h-40 w-40 text-primary" />
+            <p className="mt-3 text-lg text-muted-foreground">Searching for Direct Routes...</p>
+          </div>
+        )}
+      </div>
 
       {directRouteData !== undefined && !isLoadingDirect && ( 
         <div ref={directRouteDiagramRef} className="flex justify-center max-w-full mx-auto">
@@ -245,3 +261,4 @@ export default function ClientPage() {
     </div>
   );
 }
+
