@@ -110,7 +110,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               )}
             />
 
-            <div className="relative flex items-center justify-center py-1">
+            <div className="relative flex items-center justify-center">
               <Button
                 type="button"
                 variant="outline"
