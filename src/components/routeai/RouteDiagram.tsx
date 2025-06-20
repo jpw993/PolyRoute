@@ -21,12 +21,12 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
       </div>
       <div className="px-2 py-4 md:px-4">
         {(!routeSteps || routeSteps.length === 0) ? (
-          <p className="text-center text-muted-foreground py-4">
+          <p className="text-center text-muted-foreground">
             No route found or still calculating.
           </p>
         ) : (
           <div
-            className="flex flex-nowrap items-stretch justify-start gap-0 py-4 overflow-x-auto"
+            className="flex flex-nowrap items-stretch justify-start gap-0 overflow-x-auto"
             role="list"
             aria-label="Swap route steps"
           >
