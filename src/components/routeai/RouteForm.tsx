@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, ArrowRightLeft } from "lucide-react";
 import { TokenIcon } from './TokenIcon';
 
 const routeFormSchema = z.object({
@@ -53,6 +53,16 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
   const watchedFromToken = form.watch("fromToken");
   const watchedToToken = form.watch("toToken");
 
+  const handleSwapTokens = () => {
+    const currentFromToken = form.getValues("fromToken");
+    const currentToToken = form.getValues("toToken");
+
+    if (currentFromToken && currentToToken) {
+      form.setValue("fromToken", currentToToken, { shouldValidate: true, shouldDirty: true });
+      form.setValue("toToken", currentFromToken, { shouldValidate: true, shouldDirty: true });
+    }
+  };
+
   return (
     <Card className="w-full max-w-lg mx-auto shadow-xl">
       <CardHeader>
@@ -63,7 +73,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4">
             <FormField
               control={form.control}
               name="fromToken"
@@ -99,6 +109,21 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                 </FormItem>
               )}
             />
+
+            <div className="relative flex items-center justify-center py-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleSwapTokens}
+                disabled={!watchedFromToken || !watchedToToken || isLoading}
+                aria-label="Swap from and to tokens"
+                className="border-2 hover:bg-accent/50 transition-colors"
+              >
+                <ArrowRightLeft className="h-4 w-4 text-primary" />
+              </Button>
+            </div>
+
             <FormField
               control={form.control}
               name="toToken"
