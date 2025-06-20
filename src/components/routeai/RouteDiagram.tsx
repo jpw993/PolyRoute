@@ -23,15 +23,15 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
             No optimal route found, or the route is still being calculated.
           </p>
         ) : (
-          <div 
-            className="flex flex-nowrap items-stretch justify-start gap-2 py-4 overflow-x-auto" 
-            role="list" 
+          <div
+            className="flex flex-nowrap items-stretch justify-start gap-2 py-4 overflow-x-auto"
+            role="list"
             aria-label="Swap route steps"
           >
             {/* Initial Token Element */}
-            <div 
-              className="flex flex-col items-center justify-center opacity-0 animate-route-step-enter" 
-              style={{ animationDelay: `0s` }} 
+            <div
+              className="flex flex-col items-center justify-center opacity-0 animate-route-step-enter"
+              style={{ animationDelay: `0s` }}
               role="listitem"
             >
               <Card className="p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center gap-1 min-w-[100px] md:min-w-[120px] h-full" data-ai-hint={`${startToken.toLowerCase()} crypto token`}>
@@ -45,32 +45,35 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
 
             {routeData.route.map((step, index) => (
               <React.Fragment key={`${step.dex}-${step.tokenOutSymbol}-${index}`}>
-                {/* DEX and Conversion Info */}
-                <div 
-                  className="flex items-center justify-center text-sm text-muted-foreground opacity-0 animate-route-step-enter" 
-                  style={{ animationDelay: `${(index * 2 + 1) * 0.25}s` }} 
+                {/* Connecting element: Arrow -> (DEX + Swap Amounts) -> Arrow */}
+                <div
+                  className="flex items-center justify-center text-sm text-muted-foreground opacity-0 animate-route-step-enter"
+                  style={{ animationDelay: `${(index * 2 + 1) * 0.25}s` }}
                   role="listitem"
                 >
-                  <ArrowRight className="h-5 w-5 mx-1 md:mx-2 shrink-0 text-primary" />
-                  <div className="flex flex-col items-center text-center mx-1 md:mx-2 p-2 bg-card border border-border rounded-md shadow-sm min-w-[150px] h-full justify-center">
-                    <span className="font-semibold text-xs text-primary">{step.dex}</span>
-                    <span className="text-xs whitespace-nowrap text-muted-foreground mt-1">
+                  <ArrowRight className="h-5 w-5 mx-1 md:mx-2 shrink-0 text-primary" /> {/* Leading arrow */}
+
+                  {/* DEX name and Swap amounts, arranged vertically */}
+                  <div className="flex flex-col items-center text-center mx-1 md:mx-2">
+                    {/* DEX Name Box */}
+                    <div className="p-2 bg-card border border-border rounded-md shadow-sm min-w-[100px] mb-1.5">
+                      <span className="font-semibold text-xs text-primary">{step.dex}</span>
+                    </div>
+                    {/* Swap Amounts Text */}
+                    <div className="text-xs whitespace-nowrap text-muted-foreground px-2 py-1 bg-secondary/10 rounded-md shadow-sm">
                       {step.amountIn.toLocaleString(undefined, { maximumFractionDigits: 4 })} {step.tokenInSymbol}
-                    </span>
-                    <span className="text-xs whitespace-nowrap text-muted-foreground">
-                      &darr;
-                    </span>
-                    <span className="text-xs whitespace-nowrap font-medium text-foreground">
+                      <span className="mx-1.5 font-semibold text-primary">&rarr;</span> {/* HTML right arrow */}
                       {step.amountOut.toLocaleString(undefined, { maximumFractionDigits: 4 })} {step.tokenOutSymbol}
-                    </span>
+                    </div>
                   </div>
-                  <ArrowRight className="h-5 w-5 mx-1 md:mx-2 shrink-0 text-primary" />
+
+                  <ArrowRight className="h-5 w-5 mx-1 md:mx-2 shrink-0 text-primary" /> {/* Trailing arrow */}
                 </div>
 
                 {/* Output Token Element from this step */}
-                <div 
-                  className="flex flex-col items-center justify-center opacity-0 animate-route-step-enter" 
-                  style={{ animationDelay: `${(index * 2 + 2) * 0.25}s` }} 
+                <div
+                  className="flex flex-col items-center justify-center opacity-0 animate-route-step-enter"
+                  style={{ animationDelay: `${(index * 2 + 2) * 0.25}s` }}
                   role="listitem"
                 >
                   <Card className="p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center gap-1 min-w-[100px] md:min-w-[120px] h-full" data-ai-hint={`${step.tokenOutSymbol.toLowerCase()} crypto token`}>
@@ -89,4 +92,3 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
     </Card>
   );
 }
-
