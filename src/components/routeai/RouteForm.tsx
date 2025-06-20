@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search, ArrowRightLeft } from "lucide-react";
+import { Loader2, Search, ArrowUpDown } from "lucide-react";
 import { TokenIcon } from './TokenIcon';
 
 const routeFormSchema = z.object({
@@ -120,7 +120,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                 aria-label="Swap from and to tokens"
                 className="border-2 hover:bg-accent/50 transition-colors"
               >
-                <ArrowRightLeft className="h-4 w-4 text-primary" />
+                <ArrowUpDown className="h-4 w-4 text-primary" />
               </Button>
             </div>
 
