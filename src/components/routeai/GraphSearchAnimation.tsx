@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -175,14 +176,12 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
   useEffect(() => {
     if (definedPaths.length === 0) return;
 
-    // 1. Current highlightedElements (completed path) become fadingElements
-    setFadingElements(new Set(highlightedElements));
-    // 2. Clear highlightedElements for the new path
-    setHighlightedElements(new Set());
-    // 3. Reset step for the new path
-    setCurrentStep(0);
+    // Current path is done, prepare for next or loop
+    setFadingElements(new Set(highlightedElements)); // Mark current path for fading
+    setHighlightedElements(new Set()); // Clear highlights for the new path
+    setCurrentStep(0); // Reset step for the new path
 
-    // 4. After FADE_DURATION, clear fadingElements
+    // After FADE_DURATION, clear fadingElements
     const fadeTimer = setTimeout(() => {
       setFadingElements(new Set());
     }, FADE_DURATION);
@@ -190,9 +189,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     return () => {
       clearTimeout(fadeTimer);
     };
-    // IMPORTANT: highlightedElements was removed from deps to fix max update depth.
-    // This effect should cycle based on activePathIndex.
-  }, [activePathIndex, definedPaths, findEdgeId]);
+  }, [activePathIndex, definedPaths]);
 
 
   // Effect for step-by-step path construction (inner loop)
@@ -221,8 +218,6 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
           const edgeId = findEdgeId(prevNodeId, currentNodeId);
           if (edgeId) {
             newHighlighted.add(edgeId); // Highlight edge
-          } else {
-            // console.warn(`Edge not found between ${prevNodeId} and ${currentNodeId}`); // For debugging
           }
         }
         return newHighlighted;
@@ -231,14 +226,12 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     }, STEP_DURATION);
 
     return () => clearTimeout(timer);
-     // IMPORTANT: highlightedElements removed from deps here as well.
-     // This effect constructs highlightedElements based on currentStep & activePathIndex.
   }, [currentStep, activePathIndex, definedPaths, findEdgeId]);
 
 
   const getNodeClass = useCallback((nodeId: string) => {
     if (highlightedElements.has(nodeId) && !fadingElements.has(nodeId)) return 'node-highlight';
-    if (fadingElements.has(nodeId)) return 'node-fading'; // Node specific fading style if needed
+    if (fadingElements.has(nodeId)) return 'node-fading';
     return 'node-base';
   }, [highlightedElements, fadingElements]);
 
@@ -247,7 +240,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     if (highlightedElements.has(edgeId) && !fadingElements.has(edgeId)) {
       classes = 'edge-highlight edge-drawing-active';
     } else if (fadingElements.has(edgeId)) {
-      classes = 'edge-fading'; // Edge specific fading style if needed
+      classes = 'edge-fading';
     }
     return classes;
   }, [highlightedElements, fadingElements]);
@@ -269,14 +262,13 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         }
         .node-highlight {
           fill: hsl(var(--primary)); 
-          /* No transition for highlight, should be immediate */
         }
         .node-fading {
-          fill: hsl(var(--secondary)); /* Target color for fade */
+          fill: hsl(var(--secondary)); 
           transition: fill ${FADE_DURATION}ms ease-out;
         }
         
-        .node-center-pulse { /* Center node uses its own radius from nodeVisualRadii[0] */
+        .node-center-pulse {
           animation: pulseNodeAnim ${0.17 * 1}s infinite ease-in-out;
         }
         
@@ -289,20 +281,19 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         .edge-highlight {
           stroke: hsl(var(--primary)); 
           opacity: 0.8; 
-          stroke-width: 0.6; 
-          /* No transition for highlight, should be immediate */
+          stroke-width: 1.2; 
           animation: pulseEdgeAnim 0.75s infinite alternate ease-in-out;
         }
          .edge-fading {
-          stroke: hsl(var(--secondary)); /* Target color for fade */
-          opacity: 0.2; /* Target opacity for fade */
-          stroke-width: 0.22; /* Target stroke-width for fade */
+          stroke: hsl(var(--secondary));
+          opacity: 0.2; 
+          stroke-width: 0.22;
           transition: stroke ${FADE_DURATION}ms ease-out, opacity ${FADE_DURATION}ms ease-out, stroke-width ${FADE_DURATION}ms ease-out;
         }
 
-        .edge-drawing-active { /* Applied to highlighted edges to draw them */
-          stroke-dasharray: 20; /* A large enough value to cover edge length */
-          stroke-dashoffset: 20; /* Start with dash hidden */
+        .edge-drawing-active { 
+          stroke-dasharray: 20; 
+          stroke-dashoffset: 20; 
           animation: drawPathAnim ${STEP_DURATION}ms linear forwards;
         }
 
@@ -311,15 +302,14 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
           50% { r: calc(var(--center-node-radius, ${nodeVisualRadii[0]}) * 1.2); opacity: 0.7; }
         }
         @keyframes drawPathAnim {
-          to { stroke-dashoffset: 0; } /* Animate to fully drawn */
+          to { stroke-dashoffset: 0; } 
         }
         @keyframes pulseEdgeAnim { 
-          from { stroke-width: 0.6; opacity: 0.8; }
-          to   { stroke-width: 0.9; opacity: 1; }
+          from { stroke-width: 1.2; opacity: 0.8; }
+          to   { stroke-width: 1.5; opacity: 1; }
         }
       `}</style>
       
-      {/* Define CSS variable for center node radius if needed by pulseNodeAnim */}
       <defs>
         <style>{`:root { --center-node-radius: ${allNodes.find(n => n.id === 'r0-n0')?.r || nodeVisualRadii[0]}px; }`}</style>
       </defs>
@@ -347,7 +337,3 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     </svg>
   );
 }
-// nodeVisualRadii is defined at the top of the file.
-// Ensure the pulseNodeAnim keyframe uses the correct radius for the center node.
-// Using CSS variable --center-node-radius for robustness.
-
