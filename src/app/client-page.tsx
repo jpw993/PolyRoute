@@ -93,7 +93,7 @@ export default function ClientPage() {
       )}
 
       {optimalRoute && (
-        <div className={`max-w-full mx-auto space-y-6 ${directRoute ? 'mt-12' : ''}`}>
+        <div className="max-w-full mx-auto space-y-6">
           <div className="flex justify-center max-w-full mx-auto">
             <RouteDiagram 
               title="Optimal Swap Route (Multi-DEX)"
@@ -160,3 +160,4 @@ export default function ClientPage() {
     </div>
   );
 }
+
