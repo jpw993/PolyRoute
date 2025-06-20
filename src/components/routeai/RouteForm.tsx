@@ -17,6 +17,9 @@ const routeFormSchema = z.object({
   startToken: z.string().min(1, "Please select a start token."),
   endToken: z.string().min(1, "Please select an end token."),
   amount: z.coerce.number().positive("Amount must be a positive number"),
+}).refine(data => data.startToken !== data.endToken, {
+  message: "Start and end tokens cannot be the same.",
+  path: ["endToken"], // You can choose to attach the error to 'startToken' or 'endToken' or a general form error
 });
 
 export type RouteFormValues = z.infer<typeof routeFormSchema>;
@@ -47,6 +50,9 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
     },
   });
 
+  const watchedStartToken = form.watch("startToken");
+  const watchedEndToken = form.watch("endToken");
+
   return (
     <Card className="w-full max-w-lg mx-auto shadow-xl">
       <CardHeader>
@@ -64,7 +70,11 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel htmlFor="startTokenSelect" className="text-base">Start Token</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    value={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger id="startTokenSelect" className="text-base h-12">
                         <SelectValue placeholder="Select a start token" />
@@ -72,7 +82,11 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                     </FormControl>
                     <SelectContent>
                       {availableTokens.map(token => (
-                        <SelectItem key={`start-${token.value}`} value={token.value}>
+                        <SelectItem 
+                          key={`start-${token.value}`} 
+                          value={token.value}
+                          disabled={token.value === watchedEndToken}
+                        >
                           <div className="flex items-center gap-2">
                             <TokenIcon tokenSymbol={token.value} className="h-5 w-5" />
                             {token.label}
@@ -91,7 +105,11 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel htmlFor="endTokenSelect" className="text-base">End Token</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                   <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    value={field.value}
+                   >
                     <FormControl>
                       <SelectTrigger id="endTokenSelect" className="text-base h-12">
                         <SelectValue placeholder="Select an end token" />
@@ -99,7 +117,11 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                     </FormControl>
                     <SelectContent>
                       {availableTokens.map(token => (
-                        <SelectItem key={`end-${token.value}`} value={token.value}>
+                        <SelectItem 
+                          key={`end-${token.value}`} 
+                          value={token.value}
+                          disabled={token.value === watchedStartToken}
+                        >
                           <div className="flex items-center gap-2">
                             <TokenIcon tokenSymbol={token.value} className="h-5 w-5" />
                             {token.label}
