@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -15,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 export default function ClientPage() {
   const [optimalRoute, setOptimalRoute] = useState<FindOptimalRouteOutput | null>(null);
   const [currentStartToken, setCurrentStartToken] = useState<string>("");
+  const [currentInputAmount, setCurrentInputAmount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSimulationOpen, setIsSimulationOpen] = useState(false);
@@ -25,6 +27,7 @@ export default function ClientPage() {
     setError(null);
     setOptimalRoute(null); 
     setCurrentStartToken(values.startToken.toUpperCase());
+    setCurrentInputAmount(values.amount);
 
     try {
       const input: FindOptimalRouteInput = {
@@ -34,11 +37,13 @@ export default function ClientPage() {
       };
       const result = await findOptimalRoute(input);
       setOptimalRoute(result);
-      toast({
-        title: "Optimal Route Found!",
-        description: "The best swap route has been calculated for you.",
-        variant: "default",
-      });
+      // Do not show success toast here as per previous instructions to only use toast for errors.
+      // If a success toast is desired, it can be added back.
+      // toast({
+      //   title: "Optimal Route Found!",
+      //   description: "The best swap route has been calculated for you.",
+      //   variant: "default",
+      // });
     } catch (e) {
       console.error("Error finding optimal route:", e);
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -66,10 +71,14 @@ export default function ClientPage() {
       )}
 
       {optimalRoute && (
-        <div className="max-w-4xl mx-auto space-y-6">
-          <RouteDiagram startToken={currentStartToken} routeData={optimalRoute.route} />
+        <div className="max-w-full mx-auto space-y-6">
+          <RouteDiagram 
+            startToken={currentStartToken} 
+            initialAmount={currentInputAmount}
+            routeData={optimalRoute} 
+          />
           
-          <Card className="shadow-lg">
+          <Card className="shadow-lg max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
                 <BarChart3 className="h-6 w-6 text-primary" />
@@ -78,10 +87,10 @@ export default function ClientPage() {
             </CardHeader>
             <CardContent className="space-y-4 text-lg">
               <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
-                <span className="font-medium text-muted-foreground">Estimated Output:</span>
+                <span className="font-medium text-muted-foreground">Final Estimated Output:</span>
                 <span className="font-semibold text-primary">
-                  {optimalRoute.estimatedOutput.toLocaleString()}{' '}
-                  {optimalRoute.route[optimalRoute.route.length - 1]?.token || currentStartToken} 
+                  {optimalRoute.estimatedOutput.toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
+                  {optimalRoute.route.length > 0 ? optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol : currentStartToken} 
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
@@ -106,13 +115,13 @@ export default function ClientPage() {
         </div>
       )}
       
-      {optimalRoute && (
+      {optimalRoute && optimalRoute.route.length > 0 && (
         <SimulationDialog
           isOpen={isSimulationOpen}
           onOpenChange={setIsSimulationOpen}
           estimatedOutput={optimalRoute.estimatedOutput}
           gasEstimate={optimalRoute.gasEstimate}
-          endToken={optimalRoute.route[optimalRoute.route.length - 1]?.token}
+          endToken={optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol}
         />
       )}
     </div>

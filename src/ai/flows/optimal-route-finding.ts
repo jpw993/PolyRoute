@@ -18,170 +18,133 @@ const FindOptimalRouteInputSchema = z.object({
 });
 export type FindOptimalRouteInput = z.infer<typeof FindOptimalRouteInputSchema>;
 
+const SwapStepSchema = z.object({
+  dex: z.string().describe('The DEX used for this swap step.'),
+  tokenInSymbol: z.string().describe('Symbol of the input token for this swap step.'),
+  amountIn: z.number().describe('Amount of the input token for this swap step.'),
+  tokenOutSymbol: z.string().describe('Symbol of the output token from this swap step.'),
+  amountOut: z.number().describe('Amount of the output token from this swap step.'),
+});
+
 const FindOptimalRouteOutputSchema = z.object({
-  route: z.array(
-    z.object({
-      token: z.string().describe('The symbol or address of the token in this step of the route.'),
-      dex: z.string().describe('The name of the DEX used for this step of the route.'),
-    })
-  ).describe('The optimal route for the token swap, always involving 3 DEXs.'),
-  estimatedOutput: z.number().describe('The estimated output amount of the end token after the swap.'),
+  route: z.array(SwapStepSchema).describe('The optimal route for the token swap, detailing each step with amounts.'),
+  estimatedOutput: z.number().describe('The final estimated output amount of the end token after the swap.'),
   gasEstimate: z.number().describe('Estimated gas fees for the entire route, in MATIC.'),
 });
 export type FindOptimalRouteOutput = z.infer<typeof FindOptimalRouteOutputSchema>;
 
+// Helper function to apply slippage/conversion
+// Rates are illustrative and simplified
+function calculateSwap(amountIn: number, tokenIn: string, tokenOut: string, dex: string): number {
+  let rate = 0.99; // Default slippage/conversion
+  if (dex === 'Quickswap') rate = 0.995;
+  if (dex === 'Sushiswap') rate = 0.992;
+  if (dex === 'Curve') rate = 0.990;
+  if (dex === 'Uniswap') rate = 0.993;
+  if (dex === 'AavePortal') rate = 0.985; // Example for direct Aave interaction
+  
+  // Minor adjustments for specific pairs if needed (very simplified)
+  if ((tokenIn === 'MATIC' && tokenOut === 'USDC') || (tokenIn === 'USDC' && tokenOut === 'MATIC')) rate *= 1.001;
+  if ((tokenIn === 'WETH' && tokenOut === 'DAI') || (tokenIn === 'DAI' && tokenOut === 'WETH')) rate *= 1.0005;
+
+  return amountIn * rate;
+}
+
 export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<FindOptimalRouteOutput> {
-  const { startToken, endToken, amount } = input;
-  let route: FindOptimalRouteOutput['route'] = [];
-  let estimatedOutput: number = amount;
-  let gasEstimate: number = 0.05; 
+  const { startToken: initialStartToken, endToken: finalEndToken, amount: initialAmount } = input;
+  
+  const st = initialStartToken.toUpperCase();
+  const et = finalEndToken.toUpperCase();
 
-  const st = startToken.toUpperCase();
-  const et = endToken.toUpperCase();
+  let detailedRoute: z.infer<typeof SwapStepSchema>[] = [];
+  let currentAmount = initialAmount;
+  let currentToken = st;
+  let gasEstimate = 0.05;
 
-  // All routes will now be structured to use 3 DEXs.
-  // Slippage factors (e.g., 0.995, 0.99, 0.98) are illustrative.
-  // Gas estimates are illustrative.
+  // Define paths as sequences of [TargetToken, DEX]
+  type PathStep = [string, string];
+  let path: PathStep[] = [];
 
   if (st === et) {
-    // Artificial 3-DEX route for same token: ST -> USDC -> DAI -> ST
-    route = [
-      { token: 'USDC', dex: 'Quickswap' },
-      { token: 'DAI', dex: 'Sushiswap' },
-      { token: st, dex: 'Curve' }
-    ];
-    estimatedOutput = amount * 0.995 * 0.99 * 0.992; 
+    path = [['USDC', 'Quickswap'], ['DAI', 'Sushiswap'], [st, 'Curve']];
     gasEstimate = 0.25;
   } else if (st === 'MATIC' && et === 'USDC') {
-    // MATIC -> WETH -> DAI -> USDC
-    route = [
-      { token: 'WETH', dex: 'Quickswap' },
-      { token: 'DAI', dex: 'Sushiswap' },
-      { token: 'USDC', dex: 'Curve' }
-    ];
-    estimatedOutput = amount * 0.995 * 0.99 * 0.992;
+    path = [['WETH', 'Quickswap'], ['DAI', 'Sushiswap'], ['USDC', 'Curve']];
     gasEstimate = 0.22;
   } else if (st === 'USDC' && et === 'MATIC') {
-    // USDC -> DAI -> WETH -> MATIC
-    route = [
-      { token: 'DAI', dex: 'Curve' },
-      { token: 'WETH', dex: 'Sushiswap' },
-      { token: 'MATIC', dex: 'Quickswap' }
-    ];
-    estimatedOutput = amount * 0.992 * 0.99 * 0.995;
+    path = [['DAI', 'Curve'], ['WETH', 'Sushiswap'], ['MATIC', 'Quickswap']];
     gasEstimate = 0.22;
   } else if (st === 'USDC' && et === 'DAI') {
-    // USDC -> WETH -> MATIC -> DAI
-    route = [
-      { token: 'WETH', dex: 'Uniswap' },
-      { token: 'MATIC', dex: 'Quickswap' },
-      { token: 'DAI', dex: 'Sushiswap' }
-    ];
-    estimatedOutput = amount * 0.993 * 0.995 * 0.99;
+    path = [['WETH', 'Uniswap'], ['MATIC', 'Quickswap'], ['DAI', 'Sushiswap']];
     gasEstimate = 0.23;
   } else if (st === 'DAI' && et === 'USDC') {
-    // DAI -> MATIC -> WETH -> USDC
-    route = [
-      { token: 'MATIC', dex: 'Sushiswap' },
-      { token: 'WETH', dex: 'Quickswap' },
-      { token: 'USDC', dex: 'Uniswap' }
-    ];
-    estimatedOutput = amount * 0.99 * 0.995 * 0.993;
+    path = [['MATIC', 'Sushiswap'], ['WETH', 'Quickswap'], ['USDC', 'Uniswap']];
     gasEstimate = 0.23;
   } else if (st === 'MATIC' && et === 'DAI') {
-    // MATIC -> USDC -> WETH -> DAI
-    route = [
-      { token: 'USDC', dex: 'Quickswap' },
-      { token: 'WETH', dex: 'Curve' },
-      { token: 'DAI', dex: 'Sushiswap' }
-    ];
-    estimatedOutput = amount * 0.995 * 0.992 * 0.99;
+    path = [['USDC', 'Quickswap'], ['WETH', 'Curve'], ['DAI', 'Sushiswap']];
     gasEstimate = 0.24;
   } else if (st === 'DAI' && et === 'MATIC') {
-    // DAI -> WETH -> USDC -> MATIC
-     route = [
-      { token: 'WETH', dex: 'Sushiswap' },
-      { token: 'USDC', dex: 'Curve' },
-      { token: 'MATIC', dex: 'Quickswap' }
-    ];
-    estimatedOutput = amount * 0.99 * 0.992 * 0.995;
+     path = [['WETH', 'Sushiswap'], ['USDC', 'Curve'], ['MATIC', 'Quickswap']];
     gasEstimate = 0.24;
   } else if (st === 'WETH' && et === 'USDC') {
-    // WETH -> LINK -> DAI -> USDC
-    route = [
-      { token: 'LINK', dex: 'Uniswap' },
-      { token: 'DAI', dex: 'Sushiswap' },
-      { token: 'USDC', dex: 'Curve' }
-    ];
-    estimatedOutput = amount * 0.993 * 0.99 * 0.992;
+    path = [['LINK', 'Uniswap'], ['DAI', 'Sushiswap'], ['USDC', 'Curve']];
     gasEstimate = 0.26;
   } else if (st === 'USDC' && et === 'WETH') {
-    // USDC -> DAI -> LINK -> WETH
-    route = [
-      { token: 'DAI', dex: 'Curve' },
-      { token: 'LINK', dex: 'Sushiswap' },
-      { token: 'WETH', dex: 'Uniswap' }
-    ];
-    estimatedOutput = amount * 0.992 * 0.99 * 0.993;
+    path = [['DAI', 'Curve'], ['LINK', 'Sushiswap'], ['WETH', 'Uniswap']];
     gasEstimate = 0.26;
   } else if (st === 'WBTC' && et === 'USDC') {
-    // WBTC -> WETH -> LINK -> USDC
-    route = [
-      { token: 'WETH', dex: 'Curve' },
-      { token: 'LINK', dex: 'Uniswap' },
-      { token: 'USDC', dex: 'Sushiswap' }
-    ];
-    estimatedOutput = amount * 0.992 * 0.993 * 0.99;
+    path = [['WETH', 'Curve'], ['LINK', 'Uniswap'], ['USDC', 'Sushiswap']];
     gasEstimate = 0.27;
   } else if (st === 'USDC' && et === 'WBTC') {
-    // USDC -> LINK -> WETH -> WBTC
-    route = [
-      { token: 'LINK', dex: 'Sushiswap' },
-      { token: 'WETH', dex: 'Uniswap' },
-      { token: 'WBTC', dex: 'Curve' }
-    ];
-    estimatedOutput = amount * 0.99 * 0.993 * 0.992;
+    path = [['LINK', 'Sushiswap'], ['WETH', 'Uniswap'], ['WBTC', 'Curve']];
     gasEstimate = 0.27;
   } else if (st === 'MATIC' && et === 'AAVE') { 
-    // MATIC -> USDC -> LINK -> AAVE (already 3 DEXs)
-    route = [
-      { token: 'USDC', dex: 'Quickswap' },
-      { token: 'LINK', dex: 'Sushiswap' },
-      { token: 'AAVE', dex: 'AavePortal' }
-    ];
-    estimatedOutput = amount * 0.995 * 0.99 * 0.985; 
+    path = [['USDC', 'Quickswap'], ['LINK', 'Sushiswap'], ['AAVE', 'AavePortal']];
     gasEstimate = 0.25;
   } else {
-    // Fallback for unhandled pairs: ST -> IT1 -> IT2 -> ET
-    // Using LINK and WETH as somewhat generic intermediate tokens.
+    // Fallback: ST -> Intermediate1 (GenericDEX_A) -> Intermediate2 (GenericDEX_B) -> ET (GenericDEX_C)
     let intermediateToken1 = 'LINK';
     let intermediateToken2 = 'WETH';
-
-    if (st === 'LINK') intermediateToken1 = 'AAVE'; // Avoid ST -> LINK -> ...
-    if (intermediateToken1 === et ) intermediateToken1 = (et === 'AAVE' ? 'UNI' : 'AAVE'); // Avoid ST -> IT1 -> ET where IT1=ET
-    
+    if (st === 'LINK') intermediateToken1 = 'AAVE';
+    if (intermediateToken1 === et) intermediateToken1 = (et === 'AAVE' ? 'UNI' : 'AAVE');
     if (st === 'WETH' && intermediateToken1 === 'WETH') intermediateToken1 = 'DAI';
     else if (intermediateToken1 === 'WETH' && et === 'WETH') intermediateToken1 = 'DAI';
-    
-    if (intermediateToken1 === intermediateToken2) intermediateToken2 = 'USDC'; // Ensure IT1 != IT2
-    if (intermediateToken2 === et) intermediateToken2 = (et === 'USDC' ? 'DAI' : 'USDC'); // Avoid IT1 -> IT2 -> ET where IT2=ET
-    if (intermediateToken1 === intermediateToken2) intermediateToken2 = 'CRV'; // Final check for IT1 != IT2
+    if (intermediateToken1 === intermediateToken2) intermediateToken2 = 'USDC';
+    if (intermediateToken2 === et) intermediateToken2 = (et === 'USDC' ? 'DAI' : 'USDC');
+    if (intermediateToken1 === intermediateToken2) intermediateToken2 = 'CRV'; // Final check
 
-    route = [
-      { token: intermediateToken1, dex: 'GenericDEX_A' },
-      { token: intermediateToken2, dex: 'GenericDEX_B' },
-      { token: et, dex: 'GenericDEX_C' }
+    path = [
+      [intermediateToken1, 'GenericDEX_A'],
+      [intermediateToken2, 'GenericDEX_B'],
+      [et, 'GenericDEX_C']
     ];
-    estimatedOutput = amount * 0.985 * 0.985 * 0.985; 
     gasEstimate = 0.30;
   }
+
+  for (const [targetToken, dex] of path) {
+    const amountInForStep = currentAmount;
+    const tokenInForStep = currentToken;
+    const amountOutForStep = calculateSwap(amountInForStep, tokenInForStep, targetToken, dex);
+
+    detailedRoute.push({
+      dex: dex,
+      tokenInSymbol: tokenInForStep,
+      amountIn: amountInForStep,
+      tokenOutSymbol: targetToken,
+      amountOut: amountOutForStep,
+    });
+
+    currentAmount = amountOutForStep;
+    currentToken = targetToken;
+  }
   
-  await new Promise(resolve => setTimeout(resolve, 300));
+  await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+
+  const finalEstimatedOutput = detailedRoute.length > 0 ? detailedRoute[detailedRoute.length - 1].amountOut : initialAmount;
 
   return {
-    route,
-    estimatedOutput: parseFloat(estimatedOutput.toFixed(6)),
+    route: detailedRoute,
+    estimatedOutput: parseFloat(finalEstimatedOutput.toFixed(6)),
     gasEstimate: parseFloat(gasEstimate.toFixed(4)),
   };
 }
-
