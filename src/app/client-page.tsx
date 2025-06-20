@@ -93,17 +93,17 @@ export default function ClientPage() {
       )}
 
       {optimalRoute && (
-        <div className="max-w-full mx-auto space-y-6">
+        <div className="max-w-full mx-auto space-y-6 flex flex-col items-center">
           <div className="flex justify-center max-w-full mx-auto">
             <RouteDiagram 
-              title="Optimal Swap Route (Multi-DEX)"
+              title="Optimal Route (Multi-DEX)"
               startToken={currentStartToken} 
               initialAmount={currentInputAmount}
               routeData={optimalRoute} 
             />
           </div>
           
-          <Card className="shadow-lg max-w-2xl mx-auto">
+          <Card className="shadow-lg max-w-2xl mx-auto w-full">
             <CardHeader>
               <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
                 <BarChart3 className="h-6 w-6 text-primary" />
