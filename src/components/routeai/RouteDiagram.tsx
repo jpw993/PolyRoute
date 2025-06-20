@@ -55,7 +55,6 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
                   style={{ animationDelay: `${(index * 2 + 1) * 0.25}s` }}
                   role="listitem"
                 >
-                  {/* Input amount above arrow - REMOVED */}
                   <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
                 </div>
 
@@ -76,10 +75,7 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
                   role="listitem"
                 >
                   <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
-                  {/* Output amount below arrow */}
-                  <div className="text-xs text-muted-foreground mt-1 px-1 text-center whitespace-nowrap">
-                     {step.amountOut.toLocaleString(undefined, { maximumFractionDigits: 2 })} {step.tokenOutSymbol}
-                  </div>
+                  {/* Output amount below arrow - REMOVED */}
                 </div>
 
 
@@ -106,4 +102,3 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
     </div>
   );
 }
-
