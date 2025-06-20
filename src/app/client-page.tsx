@@ -132,7 +132,7 @@ export default function ClientPage() {
       
       {isLoadingDirect && (
         <div className="flex flex-col justify-center items-center py-10">
-          <GraphSearchAnimation className="h-16 w-16 text-primary" />
+          <GraphSearchAnimation className="h-40 w-40 text-primary" />
           <p className="mt-3 text-lg text-muted-foreground">Searching for Direct Routes...</p>
         </div>
       )}
@@ -161,9 +161,9 @@ export default function ClientPage() {
         </div>
       )}
       
-      {isLoadingOptimal && !isLoadingDirect && ( // Ensure direct loading is finished before showing optimal loading
+      {isLoadingOptimal && !isLoadingDirect && ( 
         <div className="flex flex-col justify-center items-center py-10">
-          <GraphSearchAnimation className="h-16 w-16 text-primary" />
+          <GraphSearchAnimation className="h-40 w-40 text-primary" />
           <p className="mt-3 text-lg text-muted-foreground">Optimizing Best Multi-DEX Route...</p>
         </div>
       )}
