@@ -9,7 +9,7 @@ import { SimulationDialog } from '@/components/routeai/SimulationDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { AlertTriangle, BarChart3, Info, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BarChart3, TrendingUp, Zap } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -139,8 +139,8 @@ export default function ClientPage() {
                   className="shadow-md hover:shadow-lg transition-shadow"
                   variant="outline"
                 >
-                  <Info className="mr-2 h-5 w-5" />
-                  View Transaction Simulation (Optimal)
+                  <Zap className="mr-2 h-5 w-5" />
+                  Execute Swap
                 </Button>
               </div>
             </CardContent>
@@ -160,3 +160,4 @@ export default function ClientPage() {
     </div>
   );
 }
+
