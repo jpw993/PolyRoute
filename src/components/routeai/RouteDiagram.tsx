@@ -38,7 +38,7 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
               <div className="flex flex-col items-center justify-center gap-1 p-3 md:p-4 min-w-[100px] md:min-w-[120px] h-full">
                 <TokenIcon tokenSymbol={startToken} className="h-7 w-7 md:h-8 md:w-8" />
                 <span className="text-sm md:text-base font-medium text-foreground truncate">{startToken}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-sm font-semibold text-muted-foreground">
                   {initialAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                 </span>
               </div>
@@ -80,7 +80,7 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
                   <div className="flex flex-col items-center justify-center gap-1 p-3 md:p-4 min-w-[100px] md:min-w-[120px] h-full">
                     <TokenIcon tokenSymbol={step.tokenOutSymbol} className="h-7 w-7 md:h-8 md:w-8" />
                     <span className="text-sm md:text-base font-medium text-foreground truncate">{step.tokenOutSymbol}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-sm font-semibold text-muted-foreground">
                       {step.amountOut.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                     </span>
                   </div>
