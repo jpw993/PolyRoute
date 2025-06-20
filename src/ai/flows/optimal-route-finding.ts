@@ -34,21 +34,60 @@ const FindOptimalRouteOutputSchema = z.object({
 export type FindOptimalRouteOutput = z.infer<typeof FindOptimalRouteOutputSchema>;
 
 // Helper function to apply slippage/conversion
-// Rates are illustrative and simplified
+// Rates are illustrative and simplified, but more realistic
 function calculateSwap(amountIn: number, tokenIn: string, tokenOut: string, dex: string): number {
-  let rate = 0.99; // Default slippage/conversion
-  if (dex === 'Quickswap') rate = 0.995;
-  if (dex === 'Sushiswap') rate = 0.992;
-  if (dex === 'Curve') rate = 0.990;
-  if (dex === 'Uniswap') rate = 0.993;
-  if (dex === 'AavePortal') rate = 0.985; // Example for direct Aave interaction
-  
-  // Minor adjustments for specific pairs if needed (very simplified)
-  if ((tokenIn === 'MATIC' && tokenOut === 'USDC') || (tokenIn === 'USDC' && tokenOut === 'MATIC')) rate *= 1.001;
-  if ((tokenIn === 'WETH' && tokenOut === 'DAI') || (tokenIn === 'DAI' && tokenOut === 'WETH')) rate *= 1.0005;
+  // Base exchange rates: 1 tokenIn = X tokenOut
+  const baseRates: Record<string, Record<string, number>> = {
+    MATIC: { USDC: 0.90, WETH: 0.00025, DAI: 0.89, AAVE: 0.009, LINK: 0.06, USDT: 0.90 },
+    USDC: { MATIC: 1.11, DAI: 0.9995, WETH: 0.00033, WBTC: 0.000016, LINK: 0.066, AAVE: 0.011, USDT: 0.9998 },
+    DAI: { MATIC: 1.12, USDC: 1.0005, WETH: 0.00034, LINK: 0.067, USDT: 1.0002 },
+    WETH: { MATIC: 4000, USDC: 3000, DAI: 2995, WBTC: 0.05, LINK: 200, AAVE: 33, USDT: 3000 },
+    WBTC: { MATIC: 62500, USDC: 60000, WETH: 20, LINK: 4000, USDT: 60000 },
+    LINK: { MATIC: 16.6, USDC: 15, DAI: 14.95, WETH: 0.005, AAVE: 0.16, USDT: 15 },
+    AAVE: { MATIC: 111, USDC: 90, DAI: 89.5, WETH: 0.0303, LINK: 6.25, USDT: 90 },
+    USDT: { MATIC: 1.11, USDC: 1.0002, DAI: 0.9998, WETH: 0.00033, WBTC: 0.000016, LINK: 0.066, AAVE: 0.011},
+    // Add other known tokens if they appear in routes, e.g., CRV, UNI
+    UNI: { USDC: 7.5 },
+    CRV: { USDC: 0.45 },
+  };
 
-  return amountIn * rate;
+  let exchangeRate = 0.92; // Default fallback rate for unlisted pairs (less favorable)
+
+  if (baseRates[tokenIn] && baseRates[tokenIn][tokenOut]) {
+    exchangeRate = baseRates[tokenIn][tokenOut];
+  } else if (baseRates[tokenOut] && baseRates[tokenOut][tokenIn]) {
+    // Calculate inverse rate if defined the other way
+    exchangeRate = 1 / baseRates[tokenOut][tokenIn];
+  }
+  // If still not found, the 0.92 default will be used.
+
+  // DEX-specific fee factor (e.g., 0.997 means 0.3% fee)
+  let dexFactor = 0.997; // Default 0.3% fee for an average DEX
+  if (dex === 'Quickswap') dexFactor = 0.9975; // 0.25% fee
+  if (dex === 'Sushiswap') dexFactor = 0.997;  // 0.3% fee
+  if (dex === 'Uniswap') dexFactor = 0.997;   // 0.3% fee for typical pools
+  if (dex === 'Curve') { // Curve has very low fees for like-kind assets
+    const stablecoins = ['USDC', 'DAI', 'USDT'];
+    if (stablecoins.includes(tokenIn) && stablecoins.includes(tokenOut)) {
+      dexFactor = 0.9996; // 0.04% fee for stablecoin swaps
+      // For stable to stable, exchangeRate should be very close to 1 before fees
+      if (tokenIn === 'USDC' && tokenOut === 'DAI') exchangeRate = 0.9998;
+      else if (tokenIn === 'DAI' && tokenOut === 'USDC') exchangeRate = 1.0002;
+      else if (tokenIn === 'USDC' && tokenOut === 'USDT') exchangeRate = 1.0001;
+      else if (tokenIn === 'USDT' && tokenOut === 'USDC') exchangeRate = 0.9999;
+      else if (tokenIn === 'DAI' && tokenOut === 'USDT') exchangeRate = 1.0003;
+      else if (tokenIn === 'USDT' && tokenOut === 'DAI') exchangeRate = 0.9997;
+      else exchangeRate = 1.0; // Assume 1:1 for other stable pairs before Curve's tiny fee
+    } else {
+      dexFactor = 0.996; // Higher fee for non-stablecoin pools on Curve
+    }
+  }
+  if (dex === 'AavePortal') dexFactor = 0.999; // Small portal interaction "fee" or slippage
+  if (dex.startsWith('GenericDEX')) dexFactor = 0.995; // 0.5% for generic ones
+
+  return amountIn * exchangeRate * dexFactor;
 }
+
 
 export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<FindOptimalRouteOutput> {
   const { startToken: initialStartToken, endToken: finalEndToken, amount: initialAmount } = input;
@@ -59,13 +98,14 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
   let detailedRoute: z.infer<typeof SwapStepSchema>[] = [];
   let currentAmount = initialAmount;
   let currentToken = st;
-  let gasEstimate = 0.05;
+  let gasEstimate = 0.05; // Base gas estimate
 
   // Define paths as sequences of [TargetToken, DEX]
   type PathStep = [string, string];
   let path: PathStep[] = [];
 
-  if (st === et) {
+  // Ensure all routes use 3 DEXs
+  if (st === et) { // e.g. MATIC -> USDC -> DAI -> MATIC
     path = [['USDC', 'Quickswap'], ['DAI', 'Sushiswap'], [st, 'Curve']];
     gasEstimate = 0.25;
   } else if (st === 'MATIC' && et === 'USDC') {
@@ -103,15 +143,25 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     gasEstimate = 0.25;
   } else {
     // Fallback: ST -> Intermediate1 (GenericDEX_A) -> Intermediate2 (GenericDEX_B) -> ET (GenericDEX_C)
+    // Pick intermediates different from ST and ET
     let intermediateToken1 = 'LINK';
+    if (st === 'LINK' || et === 'LINK') intermediateToken1 = 'AAVE';
+    if (st === 'AAVE' && et === 'AAVE') intermediateToken1 = 'UNI'; // If somehow ST=AAVE, ET=AAVE, intermediate=AAVE
+
+
     let intermediateToken2 = 'WETH';
-    if (st === 'LINK') intermediateToken1 = 'AAVE';
-    if (intermediateToken1 === et) intermediateToken1 = (et === 'AAVE' ? 'UNI' : 'AAVE');
-    if (st === 'WETH' && intermediateToken1 === 'WETH') intermediateToken1 = 'DAI';
-    else if (intermediateToken1 === 'WETH' && et === 'WETH') intermediateToken1 = 'DAI';
-    if (intermediateToken1 === intermediateToken2) intermediateToken2 = 'USDC';
-    if (intermediateToken2 === et) intermediateToken2 = (et === 'USDC' ? 'DAI' : 'USDC');
-    if (intermediateToken1 === intermediateToken2) intermediateToken2 = 'CRV'; // Final check
+    if (st === 'WETH' || et === 'WETH' || intermediateToken1 === 'WETH') intermediateToken2 = 'DAI';
+    if (intermediateToken1 === 'DAI' && (st === 'DAI' || et === 'DAI')) intermediateToken2 = 'USDC';
+    
+    // Ensure intermediates are distinct and not ST/ET
+    if (intermediateToken1 === st || intermediateToken1 === et) intermediateToken1 = 'CRV';
+    if (intermediateToken2 === st || intermediateToken2 === et || intermediateToken2 === intermediateToken1) {
+      intermediateToken2 = (intermediateToken1 === 'USDT' || st === 'USDT' || et === 'USDT') ? 'UNI' : 'USDT';
+    }
+     // Final check for distinctness
+    if (intermediateToken1 === intermediateToken2 || intermediateToken1 === st || intermediateToken1 === et) intermediateToken1 = 'WBTC'; // A very different one
+    if (intermediateToken2 === st || intermediateToken2 === et || intermediateToken2 === intermediateToken1) intermediateToken2 = 'AAVE'; // Another different one
+
 
     path = [
       [intermediateToken1, 'GenericDEX_A'],
@@ -129,16 +179,18 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     detailedRoute.push({
       dex: dex,
       tokenInSymbol: tokenInForStep,
-      amountIn: amountInForStep,
+      amountIn: parseFloat(amountInForStep.toFixed(6)),
       tokenOutSymbol: targetToken,
-      amountOut: amountOutForStep,
+      amountOut: parseFloat(amountOutForStep.toFixed(6)),
     });
 
     currentAmount = amountOutForStep;
     currentToken = targetToken;
   }
   
-  await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+  // Simulate some async operation if this were a real API call
+  await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
+
 
   const finalEstimatedOutput = detailedRoute.length > 0 ? detailedRoute[detailedRoute.length - 1].amountOut : initialAmount;
 
@@ -148,3 +200,6 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     gasEstimate: parseFloat(gasEstimate.toFixed(4)),
   };
 }
+
+
+    
