@@ -94,12 +94,14 @@ export default function ClientPage() {
 
       {optimalRoute && (
         <div className={`max-w-full mx-auto space-y-6 ${directRoute ? 'mt-12' : ''}`}>
-          <RouteDiagram 
-            title="Optimal Swap Route (Multi-DEX)"
-            startToken={currentStartToken} 
-            initialAmount={currentInputAmount}
-            routeData={optimalRoute} 
-          />
+          <div className="flex justify-center max-w-full mx-auto">
+            <RouteDiagram 
+              title="Optimal Swap Route (Multi-DEX)"
+              startToken={currentStartToken} 
+              initialAmount={currentInputAmount}
+              routeData={optimalRoute} 
+            />
+          </div>
           
           <Card className="shadow-lg max-w-2xl mx-auto">
             <CardHeader>
