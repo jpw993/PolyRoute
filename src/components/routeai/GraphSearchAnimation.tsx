@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -158,7 +159,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
   }, [allEdges]);
 
   // Effect for managing path transitions (outer loop)
- useEffect(() => {
+  useEffect(() => {
     if (definedPaths.length === 0) return;
 
     setFadingElements(new Set(highlightedElements)); 
@@ -171,7 +172,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
 
     return () => clearTimeout(fadeTimer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activePathIndex, definedPaths]); // Removed highlightedElements
+  }, [activePathIndex, definedPaths]);
 
 
   // Effect for step-by-step path construction (inner loop)
@@ -218,9 +219,6 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
   const getEdgeClass = useCallback((edgeId: string) => {
     let classes = 'edge-base';
     if (highlightedElements.has(edgeId) && !fadingElements.has(edgeId)) {
-      // Apply drawing animation only if it's being newly highlighted (not just persisting)
-      // This check is tricky because highlightedElements updates for the whole path.
-      // For simplicity, edge-drawing-active will apply for STEP_DURATION via CSS.
       classes = 'edge-highlight edge-drawing-active';
     }
     return classes;
@@ -258,15 +256,15 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         }
         .edge-highlight {
           stroke: hsl(var(--primary)); 
-          opacity: 0.8; /* Increased base opacity */
-          stroke-width: 0.6; /* Increased base stroke-width */
+          opacity: 0.8; 
+          stroke-width: 0.6; 
           transition: stroke ${FADE_DURATION}ms ease-out, opacity ${FADE_DURATION}ms ease-out, stroke-width ${FADE_DURATION}ms ease-out;
-          animation: pulseEdgeAnim 0.75s infinite alternate ease-in-out; /* Added pulsing animation */
+          animation: pulseEdgeAnim 0.75s infinite alternate ease-in-out; 
         }
 
         .edge-drawing-active {
-          stroke-dasharray: 20; /* This value might need adjustment based on typical edge length */
-          stroke-dashoffset: 20; /* Start with dash hidden */
+          stroke-dasharray: 20; 
+          stroke-dashoffset: 20; 
           animation: drawPathAnim ${STEP_DURATION}ms linear forwards;
         }
 
@@ -275,9 +273,9 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
           50% { r: ${nodeVisualRadii[0] * 1.2}; opacity: 0.7; }
         }
         @keyframes drawPathAnim {
-          to { stroke-dashoffset: 0; } /* Animate to fully drawn */
+          to { stroke-dashoffset: 0; } 
         }
-        @keyframes pulseEdgeAnim { /* New keyframes for edge pulsing */
+        @keyframes pulseEdgeAnim { 
           from { stroke-width: 0.6; opacity: 0.8; }
           to   { stroke-width: 0.9; opacity: 1; }
         }
