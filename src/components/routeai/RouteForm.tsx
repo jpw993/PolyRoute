@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -8,11 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Search } from "lucide-react";
 
 const routeFormSchema = z.object({
-  startToken: z.string().min(1, "Start token is required (e.g., MATIC, ETH)").max(10, "Token symbol too long"),
-  endToken: z.string().min(1, "End token is required (e.g., USDC, DAI)").max(10, "Token symbol too long"),
+  startToken: z.string().min(1, "Please select a start token."),
+  endToken: z.string().min(1, "Please select an end token."),
   amount: z.coerce.number().positive("Amount must be a positive number"),
 });
 
@@ -22,6 +24,17 @@ interface RouteFormProps {
   onSubmit: (values: RouteFormValues) => void;
   isLoading: boolean;
 }
+
+const availableTokens = [
+  { value: "MATIC", label: "MATIC (Polygon)" },
+  { value: "USDC", label: "USDC (USD Coin)" },
+  { value: "DAI", label: "DAI (Dai Stablecoin)" },
+  { value: "WETH", label: "WETH (Wrapped Ether)" },
+  { value: "WBTC", label: "WBTC (Wrapped Bitcoin)" },
+  { value: "USDT", label: "USDT (Tether)" },
+  { value: "LINK", label: "LINK (Chainlink)" },
+  { value: "AAVE", label: "AAVE (Aave)" },
+];
 
 export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
   const form = useForm<RouteFormValues>({
@@ -38,7 +51,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
       <CardHeader>
         <CardTitle className="text-2xl md:text-3xl font-headline text-center text-primary">Find Optimal Swap Route</CardTitle>
         <CardDescription className="text-center pt-1">
-          Enter your token details to discover the most efficient swap path on Polygon.
+          Select your token details to discover the most efficient swap path on Polygon.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -49,10 +62,21 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               name="startToken"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="startToken" className="text-base">Start Token</FormLabel>
-                  <FormControl>
-                    <Input id="startToken" placeholder="e.g., MATIC" {...field} className="text-base h-12" />
-                  </FormControl>
+                  <FormLabel htmlFor="startTokenSelect" className="text-base">Start Token</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger id="startTokenSelect" className="text-base h-12">
+                        <SelectValue placeholder="Select a start token" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableTokens.map(token => (
+                        <SelectItem key={`start-${token.value}`} value={token.value}>
+                          {token.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -62,10 +86,21 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               name="endToken"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="endToken" className="text-base">End Token</FormLabel>
-                  <FormControl>
-                    <Input id="endToken" placeholder="e.g., USDC" {...field} className="text-base h-12" />
-                  </FormControl>
+                  <FormLabel htmlFor="endTokenSelect" className="text-base">End Token</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger id="endTokenSelect" className="text-base h-12">
+                        <SelectValue placeholder="Select an end token" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {availableTokens.map(token => (
+                        <SelectItem key={`end-${token.value}`} value={token.value}>
+                          {token.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
