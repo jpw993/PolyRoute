@@ -73,7 +73,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-4">
+          <CardContent> {/* Removed space-y-4 */}
             <FormField
               control={form.control}
               name="fromToken"
@@ -110,7 +110,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               )}
             />
 
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center py-1"> {/* Added py-1 for tight spacing */}
               <Button
                 type="button"
                 variant="outline"
@@ -163,7 +163,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               control={form.control}
               name="amount"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="mt-4"> {/* Added mt-4 to restore space before amount field */}
                   <FormLabel htmlFor="amount" className="text-base">Amount</FormLabel>
                   <FormControl>
                     <Input id="amount" type="number" placeholder="e.g., 100" {...field} className="text-base h-12" step="any" />
