@@ -7,7 +7,7 @@ export function Header() {
     <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-8">
         <div className="flex items-center">
-          <PolyRouteLogo className="h-12 w-auto" />
+          <PolyRouteLogo className="h-14 w-auto" />
         </div>
         <WalletConnect />
       </div>
