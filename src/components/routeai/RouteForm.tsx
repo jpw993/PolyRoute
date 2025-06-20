@@ -110,7 +110,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
               )}
             />
 
-            <div className="relative flex items-center justify-center py-1"> {/* Added py-1 for tight spacing */}
+            <div className="relative flex items-center justify-center pt-1"> {/* Changed py-1 to pt-1 */}
               <Button
                 type="button"
                 variant="outline"
@@ -188,3 +188,4 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
     </Card>
   );
 }
+
