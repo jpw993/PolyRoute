@@ -10,7 +10,7 @@ export function AppInitialLoad() {
         {/* Using larger dimensions for the logo on the initial load screen */}
         <PolyRouteLogo width={768} height={192} />
       </div>
-      <p className="mt-6 text-lg md:text-xl text-primary font-medium">
+      <p className="mt-4 text-lg md:text-xl text-primary font-medium">
         Machine Learning powered best swap route finder
       </p>
     </div>
