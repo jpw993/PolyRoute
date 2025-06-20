@@ -5,10 +5,9 @@ import { ArrowRight } from 'lucide-react';
 import React from 'react';
 
 interface RouteDiagramProps {
-  title?: string; // New prop for custom title
+  title?: string; 
   startToken: string;
   initialAmount: number;
-  // Accept a subset of FindOptimalRouteOutput or a similar structure for flexibility
   routeData: Pick<FindOptimalRouteOutput, 'route' | 'estimatedOutput'> | null ;
 }
 
@@ -16,8 +15,7 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
   const routeSteps = routeData?.route;
 
   return (
-    // Removed Card component from here to apply it at a higher level if needed, or not at all
-    <div className="shadow-xl overflow-hidden mt-8 bg-card rounded-lg">
+    <div className="shadow-xl overflow-hidden bg-card rounded-lg">
       <div className="p-6"> 
         <h2 className="text-2xl font-headline text-center text-primary">{title}</h2>
       </div>
@@ -28,11 +26,10 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
           </p>
         ) : (
           <div
-            className="flex flex-nowrap items-stretch justify-start gap-0 py-4 overflow-x-auto" // Reduced gap for tighter layout
+            className="flex flex-nowrap items-stretch justify-start gap-0 py-4 overflow-x-auto"
             role="list"
             aria-label="Swap route steps"
           >
-            {/* Initial Token Element */}
             <div
               className="flex flex-col items-center justify-center opacity-0 animate-route-step-enter"
               style={{ animationDelay: `0s` }}
@@ -49,7 +46,6 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
 
             {routeSteps.map((step, index) => (
               <React.Fragment key={`${step.dex}-${step.tokenOutSymbol}-${index}`}>
-                {/* Connecting element: Arrow -> (DEX) -> Arrow */}
                 <div
                   className="flex flex-col items-center justify-center text-sm text-muted-foreground opacity-0 animate-route-step-enter"
                   style={{ animationDelay: `${(index * 2 + 1) * 0.25}s` }}
@@ -58,7 +54,6 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
                   <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
                 </div>
 
-                {/* DEX name */}
                 <div 
                     className="flex items-center justify-center opacity-0 animate-route-step-enter mx-2"
                     style={{ animationDelay: `${(index * 2 + 1.5) * 0.25}s` }}
@@ -71,17 +66,15 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
                 
                 <div
                   className="flex flex-col items-center justify-center text-sm text-muted-foreground opacity-0 animate-route-step-enter"
-                  style={{ animationDelay: `${(index * 2 + 2) * 0.25}s` }} // Adjusted delay
+                  style={{ animationDelay: `${(index * 2 + 2) * 0.25}s` }} 
                   role="listitem"
                 >
                   <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
                 </div>
 
-
-                {/* Output Token Element from this step */}
                 <div
                   className="flex flex-col items-center justify-center opacity-0 animate-route-step-enter"
-                  style={{ animationDelay: `${(index * 2 + 2.5) * 0.25}s` }} // Adjusted delay
+                  style={{ animationDelay: `${(index * 2 + 2.5) * 0.25}s` }} 
                   role="listitem"
                 >
                   <div className="flex flex-col items-center justify-center gap-1 p-3 md:p-4 min-w-[100px] md:min-w-[120px] h-full">

@@ -82,7 +82,7 @@ export default function ClientPage() {
       )}
 
       {directRoute && (
-         <div className="flex justify-center max-w-full mx-auto space-y-6">
+         <div className="flex justify-center max-w-full mx-auto">
           <RouteDiagram 
             title="Direct Route (1 DEX)"
             startToken={currentStartToken} 
@@ -160,4 +160,3 @@ export default function ClientPage() {
     </div>
   );
 }
-
