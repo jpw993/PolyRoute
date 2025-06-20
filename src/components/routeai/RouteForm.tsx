@@ -14,12 +14,12 @@ import { Loader2, Search } from "lucide-react";
 import { TokenIcon } from './TokenIcon';
 
 const routeFormSchema = z.object({
-  startToken: z.string().min(1, "Please select a start token."),
-  endToken: z.string().min(1, "Please select an end token."),
+  fromToken: z.string().min(1, "Please select a 'From' token."),
+  toToken: z.string().min(1, "Please select a 'To' token."),
   amount: z.coerce.number().positive("Amount must be a positive number"),
-}).refine(data => data.startToken !== data.endToken, {
-  message: "Start and end tokens cannot be the same.",
-  path: ["endToken"], // You can choose to attach the error to 'startToken' or 'endToken' or a general form error
+}).refine(data => data.fromToken !== data.toToken, {
+  message: "'From' and 'To' tokens cannot be the same.",
+  path: ["toToken"], 
 });
 
 export type RouteFormValues = z.infer<typeof routeFormSchema>;
@@ -44,14 +44,14 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
   const form = useForm<RouteFormValues>({
     resolver: zodResolver(routeFormSchema),
     defaultValues: {
-      startToken: "",
-      endToken: "",
+      fromToken: "",
+      toToken: "",
       amount: 1,
     },
   });
 
-  const watchedStartToken = form.watch("startToken");
-  const watchedEndToken = form.watch("endToken");
+  const watchedFromToken = form.watch("fromToken");
+  const watchedToToken = form.watch("toToken");
 
   return (
     <Card className="w-full max-w-lg mx-auto shadow-xl">
@@ -66,26 +66,26 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
           <CardContent className="space-y-6">
             <FormField
               control={form.control}
-              name="startToken"
+              name="fromToken"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="startTokenSelect" className="text-base">Start Token</FormLabel>
+                  <FormLabel htmlFor="fromTokenSelect" className="text-base">From</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
                     value={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger id="startTokenSelect" className="text-base h-12">
-                        <SelectValue placeholder="Select a start token" />
+                      <SelectTrigger id="fromTokenSelect" className="text-base h-12">
+                        <SelectValue placeholder="Select a 'From' token" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {availableTokens.map(token => (
                         <SelectItem 
-                          key={`start-${token.value}`} 
+                          key={`from-${token.value}`} 
                           value={token.value}
-                          disabled={token.value === watchedEndToken}
+                          disabled={token.value === watchedToToken}
                         >
                           <div className="flex items-center gap-2">
                             <TokenIcon tokenSymbol={token.value} className="h-5 w-5" />
@@ -101,26 +101,26 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
             />
             <FormField
               control={form.control}
-              name="endToken"
+              name="toToken"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel htmlFor="endTokenSelect" className="text-base">End Token</FormLabel>
+                  <FormLabel htmlFor="toTokenSelect" className="text-base">To</FormLabel>
                    <Select 
                     onValueChange={field.onChange} 
                     defaultValue={field.value}
                     value={field.value}
                    >
                     <FormControl>
-                      <SelectTrigger id="endTokenSelect" className="text-base h-12">
-                        <SelectValue placeholder="Select an end token" />
+                      <SelectTrigger id="toTokenSelect" className="text-base h-12">
+                        <SelectValue placeholder="Select a 'To' token" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {availableTokens.map(token => (
                         <SelectItem 
-                          key={`end-${token.value}`} 
+                          key={`to-${token.value}`} 
                           value={token.value}
-                          disabled={token.value === watchedStartToken}
+                          disabled={token.value === watchedFromToken}
                         >
                           <div className="flex items-center gap-2">
                             <TokenIcon tokenSymbol={token.value} className="h-5 w-5" />

@@ -26,13 +26,13 @@ export default function ClientPage() {
     setIsLoading(true);
     setError(null);
     setRouteResult(null); 
-    setCurrentStartToken(values.startToken.toUpperCase());
+    setCurrentStartToken(values.fromToken.toUpperCase());
     setCurrentInputAmount(values.amount);
 
     try {
       const input: FindOptimalRouteInput = {
-        startToken: values.startToken.toUpperCase(),
-        endToken: values.endToken.toUpperCase(),
+        startToken: values.fromToken.toUpperCase(),
+        endToken: values.toToken.toUpperCase(),
         amount: values.amount,
       };
       const result = await findOptimalRoute(input);
@@ -160,4 +160,3 @@ export default function ClientPage() {
     </div>
   );
 }
-
