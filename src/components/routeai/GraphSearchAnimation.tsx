@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -103,7 +102,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         });
 
         if (toRingNodes.length > 1 && fromRingNodes.length > 1 && fromRingNodes.length < toRingNodes.length * 0.8) { 
-          const targetIdx2 = (targetIdx1 + 1) % toRingNodes.length;
+          const targetIdx2 = (targetIdx1 + Math.floor(toRingNodes.length / (fromRingNodes.length * 2)) ) % toRingNodes.length;
           const toNode2 = toRingNodes[targetIdx2];
            if (toNode1.id !== toNode2.id) { 
             generatedEdgesList.push({
@@ -159,7 +158,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
   }, [allEdges]);
 
   // Effect for managing path transitions (outer loop)
-  useEffect(() => {
+ useEffect(() => {
     if (definedPaths.length === 0) return;
 
     setFadingElements(new Set(highlightedElements)); 
@@ -171,7 +170,8 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     }, FADE_DURATION);
 
     return () => clearTimeout(fadeTimer);
-  }, [activePathIndex, definedPaths]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePathIndex, definedPaths]); // Removed highlightedElements
 
 
   // Effect for step-by-step path construction (inner loop)
@@ -180,12 +180,14 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     
     const currentPathDef = definedPaths[activePathIndex];
     if (!currentPathDef || currentStep >= currentPathDef.nodeIds.length) {
+      // Path completed, pause then start next path
       const timer = setTimeout(() => {
         setActivePathIndex((prevIndex) => (prevIndex + 1) % definedPaths.length);
       }, PATH_COMPLETED_PAUSE);
       return () => clearTimeout(timer);
     }
 
+    // Construct current step of the path
     const timer = setTimeout(() => {
       setHighlightedElements(prevHighlighted => {
         const newHighlighted = new Set(prevHighlighted);
@@ -205,7 +207,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     }, STEP_DURATION);
 
     return () => clearTimeout(timer);
-  }, [currentStep, activePathIndex, definedPaths, findEdgeId, highlightedElements]);
+  }, [currentStep, activePathIndex, definedPaths, findEdgeId]);
 
 
   const getNodeClass = useCallback((nodeId: string) => {
@@ -216,6 +218,9 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
   const getEdgeClass = useCallback((edgeId: string) => {
     let classes = 'edge-base';
     if (highlightedElements.has(edgeId) && !fadingElements.has(edgeId)) {
+      // Apply drawing animation only if it's being newly highlighted (not just persisting)
+      // This check is tricky because highlightedElements updates for the whole path.
+      // For simplicity, edge-drawing-active will apply for STEP_DURATION via CSS.
       classes = 'edge-highlight edge-drawing-active';
     }
     return classes;
@@ -253,14 +258,15 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         }
         .edge-highlight {
           stroke: hsl(var(--primary)); 
-          opacity: 0.7;
-          stroke-width: 0.35; 
-          transition: stroke ${STEP_DURATION * 0.5}ms ease-in, opacity ${STEP_DURATION * 0.5}ms ease-in, stroke-width ${STEP_DURATION * 0.5}ms ease-in;
+          opacity: 0.8; /* Increased base opacity */
+          stroke-width: 0.6; /* Increased base stroke-width */
+          transition: stroke ${FADE_DURATION}ms ease-out, opacity ${FADE_DURATION}ms ease-out, stroke-width ${FADE_DURATION}ms ease-out;
+          animation: pulseEdgeAnim 0.75s infinite alternate ease-in-out; /* Added pulsing animation */
         }
 
         .edge-drawing-active {
-          stroke-dasharray: 20; 
-          stroke-dashoffset: 20;
+          stroke-dasharray: 20; /* This value might need adjustment based on typical edge length */
+          stroke-dashoffset: 20; /* Start with dash hidden */
           animation: drawPathAnim ${STEP_DURATION}ms linear forwards;
         }
 
@@ -269,7 +275,11 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
           50% { r: ${nodeVisualRadii[0] * 1.2}; opacity: 0.7; }
         }
         @keyframes drawPathAnim {
-          to { stroke-dashoffset: 0; }
+          to { stroke-dashoffset: 0; } /* Animate to fully drawn */
+        }
+        @keyframes pulseEdgeAnim { /* New keyframes for edge pulsing */
+          from { stroke-width: 0.6; opacity: 0.8; }
+          to   { stroke-width: 0.9; opacity: 1; }
         }
       `}</style>
 
@@ -299,5 +309,3 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
 // nodeVisualRadii is defined at the top of the file.
 // Ensure the pulseNodeAnim keyframe uses the correct radius for the center node.
 // If nodeVisualRadii[0] is the center node's radius, the animation is correct.
-
-    
