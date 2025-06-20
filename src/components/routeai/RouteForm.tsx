@@ -120,7 +120,7 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                 aria-label="Swap from and to tokens"
                 className="border-2 hover:bg-accent/50 transition-colors"
               >
-                <ArrowUpDown className="h-7 w-7 text-primary" />
+                <ArrowUpDown className="h-8 w-8 text-primary" />
               </Button>
             </div>
 
