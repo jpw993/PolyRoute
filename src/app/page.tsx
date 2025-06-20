@@ -13,7 +13,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
-    }, 2000); // Show loading screen for 2 seconds
+    }, 4000); // Show loading screen for 4 seconds
 
     return () => clearTimeout(timer); // Cleanup timer on unmount
   }, []);
