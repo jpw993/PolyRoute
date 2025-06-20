@@ -27,49 +27,57 @@ const SwapStepSchema = z.object({
 });
 
 const FindOptimalRouteOutputSchema = z.object({
-  route: z.array(SwapStepSchema).describe('The optimal route for the token swap, detailing each step with amounts.'),
-  estimatedOutput: z.number().describe('The final estimated output amount of the end token after the swap.'),
-  gasEstimate: z.number().describe('Estimated gas fees for the entire route, in POL.'),
+  route: z.array(SwapStepSchema).describe('The optimal multi-step route for the token swap, detailing each step with amounts.'),
+  estimatedOutput: z.number().describe('The final estimated output amount of the end token after the optimal multi-step swap.'),
+  gasEstimate: z.number().describe('Estimated gas fees for the optimal multi-step route, in POL.'),
+  directRoute: z.array(SwapStepSchema).optional().describe('The best direct (single DEX) route for the token swap, if available.'),
+  directEstimatedOutput: z.number().optional().describe('The final estimated output amount for the direct route, if available.'),
+  directGasEstimate: z.number().optional().describe('Estimated gas fees for the direct route, in POL, if available.'),
 });
 export type FindOptimalRouteOutput = z.infer<typeof FindOptimalRouteOutputSchema>;
 
 // Helper function to apply slippage/conversion
 // Rates are illustrative and simplified, but more realistic
 function calculateSwap(amountIn: number, tokenIn: string, tokenOut: string, dex: string): number {
-  // Base exchange rates: 1 tokenIn = X tokenOut
-  // Assuming: 1 POL = $0.19, 1 USDC/DAI/USDT = $1.00, 1 WETH = $3500, 1 WBTC = $60000, 1 LINK = $14, 1 AAVE = $90
   const baseRates: Record<string, Record<string, number>> = {
-    POL: { USDC: 0.19, WETH: 0.000054, DAI: 0.19, AAVE: 0.0021, LINK: 0.0135, USDT: 0.19 }, // POL approx $0.19
-    USDC: { POL: 1 / 0.19, DAI: 0.9995, WETH: 1 / 3500, WBTC: 1 / 60000, LINK: 1 / 14, AAVE: 1 / 90, USDT: 0.9998 }, // USDC approx $1
-    DAI: { POL: 1 / 0.19, USDC: 1.0005, WETH: 1 / 3500, LINK: 1 / 14, USDT: 1.0002 }, // DAI approx $1
-    WETH: { POL: 1 / 0.000054, USDC: 3500, DAI: 3495, WBTC: 3500 / 60000, LINK: 3500 / 14, AAVE: 3500 / 90, USDT: 3500 }, // WETH approx $3500
-    WBTC: { POL: 1 / (0.19 / 60000) , USDC: 60000, WETH: 60000 / 3500, LINK: 60000 / 14, USDT: 60000 }, // WBTC approx $60000
-    LINK: { POL: 1 / 0.0135, USDC: 14, DAI: 13.98, WETH: 14 / 3500, AAVE: 14 / 90, USDT: 14 }, // LINK approx $14
-    AAVE: { POL: 1 / 0.0021, USDC: 90, DAI: 89.9, WETH: 90 / 3500, LINK: 90 / 14, USDT: 90 }, // AAVE approx $90
-    USDT: { POL: 1 / 0.19, USDC: 1.0002, DAI: 0.9998, WETH: 1 / 3500, WBTC: 1 / 60000, LINK: 1 / 14, AAVE: 1 / 90}, // USDT approx $1
+    POL: { USDC: 0.19, WETH: 0.000054, DAI: 0.19, AAVE: 0.0021, LINK: 0.0135, USDT: 0.19 },
+    USDC: { POL: 1 / 0.19, DAI: 0.9995, WETH: 1 / 3500, WBTC: 1 / 60000, LINK: 1 / 14, AAVE: 1 / 90, USDT: 0.9998 },
+    DAI: { POL: 1 / 0.19, USDC: 1.0005, WETH: 1 / 3500, LINK: 1 / 14, USDT: 1.0002 },
+    WETH: { POL: 1 / 0.000054, USDC: 3500, DAI: 3495, WBTC: 3500 / 60000, LINK: 3500 / 14, AAVE: 3500 / 90, USDT: 3500 },
+    WBTC: { POL: 1 / (0.19 / 60000) , USDC: 60000, WETH: 60000 / 3500, LINK: 60000 / 14, USDT: 60000 },
+    LINK: { POL: 1 / 0.0135, USDC: 14, DAI: 13.98, WETH: 14 / 3500, AAVE: 14 / 90, USDT: 14 },
+    AAVE: { POL: 1 / 0.0021, USDC: 90, DAI: 89.9, WETH: 90 / 3500, LINK: 90 / 14, USDT: 90 },
+    USDT: { POL: 1 / 0.19, USDC: 1.0002, DAI: 0.9998, WETH: 1 / 3500, WBTC: 1 / 60000, LINK: 1 / 14, AAVE: 1 / 90},
     UNI: { USDC: 7.5 }, 
     CRV: { USDC: 0.45 }, 
   };
 
-  let exchangeRate = 0.92; // Default fallback rate for unlisted pairs (less favorable)
-
+  let exchangeRate = 0; // Default to 0 if no rate found
   if (baseRates[tokenIn] && baseRates[tokenIn][tokenOut]) {
     exchangeRate = baseRates[tokenIn][tokenOut];
   } else if (baseRates[tokenOut] && baseRates[tokenOut][tokenIn]) {
-    // Calculate inverse rate if defined the other way
     exchangeRate = 1 / baseRates[tokenOut][tokenIn];
+  } else {
+     // Check for intermediate stablecoin routes for non-listed pairs, e.g., TOKEN -> USDC -> TARGET_TOKEN
+     if (baseRates[tokenIn]?.USDC && baseRates.USDC?.[tokenOut]) {
+        // This is a simplistic 2-hop, not a direct swap.
+        // For true direct swap, if not in baseRates, it's not supported by this simplified model.
+        // Consider logging or handling unsupported direct pairs
+        return 0; // Indicate unsupported direct swap
+     }
+     return 0; // Indicate unsupported direct swap
   }
-  // If still not found, the 0.92 default will be used.
+  if (exchangeRate === 0) return 0;
 
-  // DEX-specific fee factor (e.g., 0.997 means 0.3% fee)
-  let dexFactor = 0.997; // Default 0.3% fee for an average DEX
-  if (dex === 'Quickswap') dexFactor = 0.9975; // 0.25% fee
-  if (dex === 'Sushiswap') dexFactor = 0.997;  // 0.3% fee
-  if (dex === 'Uniswap') dexFactor = 0.997;   // 0.3% fee for typical pools
+
+  let dexFactor = 0.997; 
+  if (dex === 'Quickswap') dexFactor = 0.9975; 
+  if (dex === 'Sushiswap') dexFactor = 0.997;  
+  if (dex === 'Uniswap') dexFactor = 0.997;   
   if (dex === 'Curve') { 
     const stablecoins = ['USDC', 'DAI', 'USDT'];
     if (stablecoins.includes(tokenIn) && stablecoins.includes(tokenOut)) {
-      dexFactor = 0.9996; // 0.04% fee for stablecoin swaps
+      dexFactor = 0.9996; 
       if (tokenIn === 'USDC' && tokenOut === 'DAI') exchangeRate = 0.9998;
       else if (tokenIn === 'DAI' && tokenOut === 'USDC') exchangeRate = 1.0002;
       else if (tokenIn === 'USDC' && tokenOut === 'USDT') exchangeRate = 1.0001;
@@ -94,54 +102,79 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
   const st = initialStartToken.toUpperCase();
   const et = finalEndToken.toUpperCase();
 
+  // Find Best Direct Route
+  let bestDirectRoute: z.infer<typeof SwapStepSchema>[] = [];
+  let bestDirectOutput = 0;
+  let bestDirectDex = '';
+  const majorDEXes = ['Quickswap', 'Sushiswap', 'Uniswap', 'Curve'];
+
+  if (st !== et) {
+    for (const dex of majorDEXes) {
+      const directAmountOut = calculateSwap(initialAmount, st, et, dex);
+      if (directAmountOut > bestDirectOutput) {
+        bestDirectOutput = directAmountOut;
+        bestDirectDex = dex;
+      }
+    }
+  }
+
+  if (bestDirectOutput > 0 && bestDirectDex) {
+    bestDirectRoute = [{
+      dex: bestDirectDex,
+      tokenInSymbol: st,
+      amountIn: parseFloat(initialAmount.toFixed(6)),
+      tokenOutSymbol: et,
+      amountOut: parseFloat(bestDirectOutput.toFixed(6)),
+    }];
+  }
+  const directGasEstimate = bestDirectRoute.length > 0 ? 0.015 : undefined; // Simplified gas for direct
+
+  // Optimal Multi-Step Route (existing logic)
   let detailedRoute: z.infer<typeof SwapStepSchema>[] = [];
   let currentAmount = initialAmount;
   let currentToken = st;
-  let gasEstimate = 0.05; // Base gas estimate in POL
+  let gasEstimate = 0.05; 
 
-  // Define paths as sequences of [TargetToken, DEX]
   type PathStep = [string, string];
   let path: PathStep[] = [];
 
-  // Ensure all routes use 3 DEXs
-  if (st === et) { // e.g. POL -> USDC -> DAI -> POL
+  if (st === et) { 
     path = [['USDC', 'Quickswap'], ['DAI', 'Sushiswap'], [st, 'Curve']];
-    gasEstimate = 0.025; // POL
+    gasEstimate = 0.025; 
   } else if (st === 'POL' && et === 'USDC') {
     path = [['WETH', 'Quickswap'], ['DAI', 'Sushiswap'], ['USDC', 'Curve']];
-    gasEstimate = 0.022; // POL
+    gasEstimate = 0.022; 
   } else if (st === 'USDC' && et === 'POL') {
     path = [['DAI', 'Curve'], ['WETH', 'Sushiswap'], ['POL', 'Quickswap']];
-    gasEstimate = 0.022; // POL
+    gasEstimate = 0.022; 
   } else if (st === 'USDC' && et === 'DAI') {
     path = [['WETH', 'Uniswap'], ['POL', 'Quickswap'], ['DAI', 'Sushiswap']];
-    gasEstimate = 0.023; // POL
+    gasEstimate = 0.023; 
   } else if (st === 'DAI' && et === 'USDC') {
     path = [['POL', 'Sushiswap'], ['WETH', 'Quickswap'], ['USDC', 'Uniswap']];
-    gasEstimate = 0.023; // POL
+    gasEstimate = 0.023; 
   } else if (st === 'POL' && et === 'DAI') {
     path = [['USDC', 'Quickswap'], ['WETH', 'Curve'], ['DAI', 'Sushiswap']];
-    gasEstimate = 0.024; // POL
+    gasEstimate = 0.024; 
   } else if (st === 'DAI' && et === 'POL') {
      path = [['WETH', 'Sushiswap'], ['USDC', 'Curve'], ['POL', 'Quickswap']];
-    gasEstimate = 0.024; // POL
+    gasEstimate = 0.024; 
   } else if (st === 'WETH' && et === 'USDC') {
     path = [['LINK', 'Uniswap'], ['DAI', 'Sushiswap'], ['USDC', 'Curve']];
-    gasEstimate = 0.026; // POL
+    gasEstimate = 0.026; 
   } else if (st === 'USDC' && et === 'WETH') {
     path = [['DAI', 'Curve'], ['LINK', 'Sushiswap'], ['WETH', 'Uniswap']];
-    gasEstimate = 0.026; // POL
+    gasEstimate = 0.026; 
   } else if (st === 'WBTC' && et === 'USDC') {
     path = [['WETH', 'Curve'], ['LINK', 'Uniswap'], ['USDC', 'Sushiswap']];
-    gasEstimate = 0.027; // POL
+    gasEstimate = 0.027; 
   } else if (st === 'USDC' && et === 'WBTC') {
     path = [['LINK', 'Sushiswap'], ['WETH', 'Uniswap'], ['WBTC', 'Curve']];
-    gasEstimate = 0.027; // POL
+    gasEstimate = 0.027; 
   } else if (st === 'POL' && et === 'AAVE') { 
     path = [['USDC', 'Quickswap'], ['LINK', 'Sushiswap'], ['AAVE', 'AavePortal']];
-    gasEstimate = 0.025; // POL
+    gasEstimate = 0.025; 
   } else {
-    // Fallback: ST -> Intermediate1 (GenericDEX_A) -> Intermediate2 (GenericDEX_B) -> ET (GenericDEX_C)
     let intermediateToken1 = 'LINK';
     if (st === 'LINK' || et === 'LINK') intermediateToken1 = 'AAVE';
     if (st === 'AAVE' && et === 'AAVE') intermediateToken1 = 'UNI'; 
@@ -164,13 +197,19 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
       [intermediateToken2, 'GenericDEX_B'],
       [et, 'GenericDEX_C']
     ];
-    gasEstimate = 0.030; // POL
+    gasEstimate = 0.030; 
   }
 
   for (const [targetToken, dex] of path) {
     const amountInForStep = currentAmount;
     const tokenInForStep = currentToken;
     const amountOutForStep = calculateSwap(amountInForStep, tokenInForStep, targetToken, dex);
+    
+    if (amountOutForStep <= 0 && path.indexOf([targetToken, dex]) < path.length -1) {
+        // If a step results in 0 output and it's not the final step, this path is invalid.
+        // For simplicity, we'll let it proceed and result in 0 final output for the multi-step.
+        // A more robust solution might try alternative intermediate tokens or paths.
+    }
 
     detailedRoute.push({
       dex: dex,
@@ -182,17 +221,24 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
 
     currentAmount = amountOutForStep;
     currentToken = targetToken;
+    if (currentAmount <= 0 && path.indexOf([targetToken, dex]) < path.length -1) break; // Stop if intermediate step yields nothing
   }
   
   await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
 
+  const finalEstimatedOutput = detailedRoute.length > 0 && currentAmount > 0 ? detailedRoute[detailedRoute.length - 1].amountOut : 0;
 
-  const finalEstimatedOutput = detailedRoute.length > 0 ? detailedRoute[detailedRoute.length - 1].amountOut : initialAmount;
+  // If optimal route is worse than direct, or yields 0, consider direct route as primary if it's better
+  // However, the user asked for both to be displayed.
+  // So, we just return both.
 
   return {
     route: detailedRoute,
     estimatedOutput: parseFloat(finalEstimatedOutput.toFixed(6)),
     gasEstimate: parseFloat(gasEstimate.toFixed(4)),
+    directRoute: bestDirectRoute.length > 0 ? bestDirectRoute : undefined,
+    directEstimatedOutput: bestDirectRoute.length > 0 ? parseFloat(bestDirectOutput.toFixed(6)) : undefined,
+    directGasEstimate: directGasEstimate
   };
 }
 

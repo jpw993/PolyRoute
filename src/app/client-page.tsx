@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 export default function ClientPage() {
-  const [optimalRoute, setOptimalRoute] = useState<FindOptimalRouteOutput | null>(null);
+  const [routeResult, setRouteResult] = useState<FindOptimalRouteOutput | null>(null);
   const [currentStartToken, setCurrentStartToken] = useState<string>("");
   const [currentInputAmount, setCurrentInputAmount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function ClientPage() {
   const handleFormSubmit = async (values: RouteFormValues) => {
     setIsLoading(true);
     setError(null);
-    setOptimalRoute(null); 
+    setRouteResult(null); 
     setCurrentStartToken(values.startToken.toUpperCase());
     setCurrentInputAmount(values.amount);
 
@@ -36,7 +36,7 @@ export default function ClientPage() {
         amount: values.amount,
       };
       const result = await findOptimalRoute(input);
-      setOptimalRoute(result);
+      setRouteResult(result);
     } catch (e) {
       console.error("Error finding optimal route:", e);
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -50,6 +50,14 @@ export default function ClientPage() {
       setIsLoading(false);
     }
   };
+
+  const optimalRoute = routeResult?.route && routeResult.route.length > 0 && routeResult.estimatedOutput > 0 ? routeResult : null;
+  const directRoute = routeResult?.directRoute && routeResult.directRoute.length > 0 && routeResult.directEstimatedOutput && routeResult.directEstimatedOutput > 0 ? {
+    route: routeResult.directRoute,
+    estimatedOutput: routeResult.directEstimatedOutput,
+    gasEstimate: routeResult.directGasEstimate || 0,
+  } : null;
+
 
   return (
     <div className="space-y-8 md:space-y-12 py-8">
@@ -66,6 +74,7 @@ export default function ClientPage() {
       {optimalRoute && (
         <div className="max-w-full mx-auto space-y-6">
           <RouteDiagram 
+            title="Optimal Swap Route (Multi-DEX)"
             startToken={currentStartToken} 
             initialAmount={currentInputAmount}
             routeData={optimalRoute} 
@@ -75,7 +84,7 @@ export default function ClientPage() {
             <CardHeader>
               <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
                 <BarChart3 className="h-6 w-6 text-primary" />
-                Swap Summary
+                Optimal Route Summary
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 text-lg">
@@ -83,7 +92,7 @@ export default function ClientPage() {
                 <span className="font-medium text-muted-foreground">Final Estimated Output:</span>
                 <span className="font-semibold text-primary">
                   {optimalRoute.estimatedOutput.toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
-                  {optimalRoute.route.length > 0 ? optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol : currentStartToken} 
+                  {optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol} 
                 </span>
               </div>
               <div className="pt-4 text-center">
@@ -94,15 +103,45 @@ export default function ClientPage() {
                   variant="outline"
                 >
                   <Info className="mr-2 h-5 w-5" />
-                  View Transaction Simulation
+                  View Transaction Simulation (Optimal)
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
+
+      {directRoute && (
+         <div className="max-w-full mx-auto space-y-6 mt-12">
+          <RouteDiagram 
+            title="Direct Route (1 DEX)"
+            startToken={currentStartToken} 
+            initialAmount={currentInputAmount}
+            routeData={directRoute}
+          />
+           <Card className="shadow-lg max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                Direct Route Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-lg">
+              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
+                <span className="font-medium text-muted-foreground">Final Estimated Output:</span>
+                <span className="font-semibold text-primary">
+                  {directRoute.estimatedOutput.toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
+                  {directRoute.route[directRoute.route.length - 1]?.tokenOutSymbol} 
+                </span>
+              </div>
+              {/* Optionally add simulation for direct route too */}
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
-      {optimalRoute && optimalRoute.route.length > 0 && (
+      {/* Simulation Dialog currently only for optimal route */}
+      {optimalRoute && isSimulationOpen && (
         <SimulationDialog
           isOpen={isSimulationOpen}
           onOpenChange={setIsSimulationOpen}
@@ -114,3 +153,4 @@ export default function ClientPage() {
     </div>
   );
 }
+
