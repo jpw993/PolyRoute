@@ -15,8 +15,9 @@ import { SimulationDialog } from '@/components/routeai/SimulationDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { AlertTriangle, BarChart3, TrendingUp, Zap, Loader2 } from 'lucide-react';
+import { AlertTriangle, BarChart3, TrendingUp, Zap } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { GraphSearchAnimation } from '@/components/routeai/GraphSearchAnimation';
 
 
 export default function ClientPage() {
@@ -80,10 +81,7 @@ export default function ClientPage() {
       setIsLoadingDirect(false);
     }
 
-    // Proceed to calculate optimal route regardless of direct route outcome (unless critical error stopped us)
-    // but only if there wasn't an error that should halt everything.
-    // For now, we'll assume we always try optimal if direct didn't throw an unrecoverable error.
-    if (!error || (error && !error.startsWith("Failed to find direct route:"))) { // Basic check to not proceed if direct had major issues
+    if (!error || (error && !error.startsWith("Failed to find direct route:"))) {
       setIsLoadingOptimal(true);
       try {
         const optimalInput: OptimalRouteCalculationInput = {
@@ -133,9 +131,9 @@ export default function ClientPage() {
       )}
       
       {isLoadingDirect && (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Calculating Direct Route...</p>
+        <div className="flex flex-col justify-center items-center py-10">
+          <GraphSearchAnimation className="h-16 w-16 text-primary" />
+          <p className="mt-3 text-lg text-muted-foreground">Searching for Direct Routes...</p>
         </div>
       )}
 
@@ -163,10 +161,10 @@ export default function ClientPage() {
         </div>
       )}
       
-      {isLoadingOptimal && (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-2 text-muted-foreground">Calculating Optimal Route...</p>
+      {isLoadingOptimal && !isLoadingDirect && ( // Ensure direct loading is finished before showing optimal loading
+        <div className="flex flex-col justify-center items-center py-10">
+          <GraphSearchAnimation className="h-16 w-16 text-primary" />
+          <p className="mt-3 text-lg text-muted-foreground">Optimizing Best Multi-DEX Route...</p>
         </div>
       )}
 
@@ -210,7 +208,7 @@ export default function ClientPage() {
                 </div>
               )}
               
-              {!directRouteData && optimalRouteData.estimatedOutput > 0 && ( // If direct route wasn't found but optimal was
+              {!directRouteData && optimalRouteData.estimatedOutput > 0 && ( 
                 <div className="flex justify-between items-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-md">
                    <span className="font-medium text-blue-700 dark:text-blue-400">
                     Note: No direct route was found for comparison. The optimal route was calculated independently.
@@ -247,6 +245,3 @@ export default function ClientPage() {
     </div>
   );
 }
-
-
-    
