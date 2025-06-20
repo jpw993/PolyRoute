@@ -9,7 +9,7 @@ import { SimulationDialog } from '@/components/routeai/SimulationDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { AlertTriangle, BarChart3, Info } from 'lucide-react';
+import { AlertTriangle, BarChart3, Info, TrendingUp } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
@@ -55,8 +55,18 @@ export default function ClientPage() {
   const directRoute = routeResult?.directRoute && routeResult.directRoute.length > 0 && routeResult.directEstimatedOutput && routeResult.directEstimatedOutput > 0 ? {
     route: routeResult.directRoute,
     estimatedOutput: routeResult.directEstimatedOutput,
-    gasEstimate: routeResult.directGasEstimate || 0, // Defaulting gasEstimate if undefined
+    gasEstimate: routeResult.directGasEstimate || 0, 
   } : null;
+
+  let advantageAmount: number | null = null;
+  let advantagePercentage: number | null = null;
+  let endTokenSymbolForAdvantage: string | undefined;
+
+  if (optimalRoute && directRoute && directRoute.estimatedOutput > 0) {
+    advantageAmount = optimalRoute.estimatedOutput - directRoute.estimatedOutput;
+    advantagePercentage = (advantageAmount / directRoute.estimatedOutput) * 100;
+    endTokenSymbolForAdvantage = optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol;
+  }
 
 
   return (
@@ -79,24 +89,6 @@ export default function ClientPage() {
             initialAmount={currentInputAmount}
             routeData={directRoute}
           />
-           <Card className="shadow-lg max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                Direct Route Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-lg">
-              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
-                <span className="font-medium text-muted-foreground">Final Estimated Output:</span>
-                <span className="font-semibold text-primary">
-                  {directRoute.estimatedOutput.toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
-                  {directRoute.route[directRoute.route.length - 1]?.tokenOutSymbol} 
-                </span>
-              </div>
-              {/* Optionally add simulation for direct route too, or a simpler summary */}
-            </CardContent>
-          </Card>
         </div>
       )}
 
@@ -124,6 +116,20 @@ export default function ClientPage() {
                   {optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol} 
                 </span>
               </div>
+
+              {advantageAmount !== null && advantagePercentage !== null && endTokenSymbolForAdvantage && advantageAmount > 0 && (
+                <div className="flex justify-between items-center p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
+                  <span className="font-medium text-green-700 dark:text-green-400 flex items-center gap-1">
+                    <TrendingUp className="h-5 w-5" />
+                    Advantage vs Direct:
+                  </span>
+                  <span className="font-semibold text-green-700 dark:text-green-300">
+                    +{advantageAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {endTokenSymbolForAdvantage}
+                    {' '}(+{advantagePercentage.toFixed(2)}%)
+                  </span>
+                </div>
+              )}
+
               <div className="pt-4 text-center">
                 <Button 
                   onClick={() => setIsSimulationOpen(true)} 
