@@ -55,21 +55,28 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         nodes.push({
           id: `r${ringIdx}-n${i}`,
           cx: 50 + ringRadius * Math.cos(angleRad),
-          cy: 50 - ringRadius * Math.sin(angleRad),
+          cy: 50 - ringRadius * Math.sin(angleRad), // SVG y-axis is inverted
           r: nodeR,
         });
       }
       return nodes;
     };
     
-    const nodeCounts = [1, 8, 14, 19, 24, 30, 35]; // Center + 6 rings
-    const ringRadiiValues = [0, 10, 17, 24, 31, 38, 45];
+    // Ring configurations: [nodeCount, ringRadius, nodeVisualRadiusIndex, offsetAngleDeg]
+    const ringConfigs: [number, number, number, number][] = [
+      [1, 0, 0, 0],    // Center
+      [8, 10, 1, 0],   // Ring 1
+      [14, 17, 2, 360 / 14 / 2], // Ring 2 (offset)
+      [19, 24, 3, 0],  // Ring 3
+      [24, 31, 4, 360 / 24 / 2], // Ring 4 (offset)
+      [30, 38, 5, 0],  // Ring 5
+      [35, 45, 6, 360 / 35 / 2], // Ring 6 (offset)
+    ];
 
-    for(let i = 0; i < nodeCounts.length; i++) {
-      const offset = (i % 2 !== 0 && i > 0) ? (360 / nodeCounts[i] / 2) : 0; // Offset every other ring
-      generatedNodesList.push(getRingNodes(nodeCounts[i], ringRadiiValues[i], nodeVisualRadii[i], offset, i));
-    }
-
+    ringConfigs.forEach(([count, radius, visualRadiusIdx, offset], ringIdx) => {
+      generatedNodesList.push(getRingNodes(count, radius, nodeVisualRadii[visualRadiusIdx], offset, ringIdx));
+    });
+    
     const flatNodes = generatedNodesList.flat();
 
     // Connect center to Ring 1
@@ -87,7 +94,6 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
       const fromRingNodes = generatedNodesList[k];
       const toRingNodes = generatedNodesList[k+1];
       fromRingNodes.forEach((fromNode, i) => {
-        // Connect to 1 or 2 "closest" nodes in the next ring
         const targetIdx1 = Math.floor(i * (toRingNodes.length / fromRingNodes.length));
         const toNode1 = toRingNodes[targetIdx1 % toRingNodes.length];
         generatedEdgesList.push({
@@ -96,8 +102,8 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
           x1: fromNode.cx, y1: fromNode.cy, x2: toNode1.cx, y2: toNode1.cy,
         });
 
-        if (toRingNodes.length > 1 && fromRingNodes.length > 1 && fromRingNodes.length < toRingNodes.length) { 
-          const targetIdx2 = (targetIdx1 + 1) % toRingNodes.length; // Connect to the next one as well
+        if (toRingNodes.length > 1 && fromRingNodes.length > 1 && fromRingNodes.length < toRingNodes.length * 0.8) { 
+          const targetIdx2 = (targetIdx1 + 1) % toRingNodes.length;
           const toNode2 = toRingNodes[targetIdx2];
            if (toNode1.id !== toNode2.id) { 
             generatedEdgesList.push({
@@ -111,12 +117,12 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     }
     
     // Intra-ring connections (simplified - connect each node to its neighbor)
-    for (let k = 1; k < generatedNodesList.length; k++) { // Start from ring 1
+    for (let k = 1; k < generatedNodesList.length; k++) {
         const ringNodes = generatedNodesList[k];
         if (ringNodes.length <=1) continue;
         for(let i = 0; i < ringNodes.length; i++) {
             const fromNode = ringNodes[i];
-            const toNode = ringNodes[(i+1) % ringNodes.length]; // Connect to next, wrapping around
+            const toNode = ringNodes[(i+1) % ringNodes.length];
             generatedEdgesList.push({
                 id: `edge-${edgeCounter++}`,
                 fromNodeId: fromNode.id, toNodeId: toNode.id,
@@ -125,23 +131,22 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         }
     }
     
-    // Define paths (sequence of node IDs)
-    // Paths must start from 'r0-n0'
     const paths: PathDefinition[] = [
       { nodeIds: ['r0-n0', 'r1-n1', 'r2-n2', 'r3-n3', 'r4-n4', 'r5-n5', 'r6-n6'] },
-      { nodeIds: ['r0-n0', 'r1-n3', 'r2-n5', 'r3-n8', 'r4-n12'] },
-      { nodeIds: ['r0-n0', 'r1-n5', 'r2-n9', 'r3-n15', 'r4-n20', 'r5-n25'] },
-      { nodeIds: ['r0-n0', 'r1-n7', 'r2-n13', 'r3-n18', 'r4-n10', 'r5-n12', 'r6-n30'] },
+      { nodeIds: ['r0-n0', 'r1-n3', 'r2-n5', 'r3-n8', 'r4-n12', 'r5-n18', 'r6-n25'] },
+      { nodeIds: ['r0-n0', 'r1-n5', 'r2-n9', 'r3-n15', 'r4-n20', 'r5-n25', 'r6-n34'] },
+      { nodeIds: ['r0-n0', 'r1-n7', 'r2-n13', 'r3-n0', 'r4-n10', 'r5-n12', 'r6-n30'] },
     ];
-    if (generatedNodesList.length > 3 && generatedNodesList[0]?.[0] && generatedNodesList[1]?.[0] && generatedNodesList[2]?.[0] && generatedNodesList[3]?.[0]) {
-        // Ensure generatedNodesList has enough depth for these paths
+     if (generatedNodesList.length > 3 && generatedNodesList[0]?.[0] && generatedNodesList[1]?.[0] && generatedNodesList[2]?.[0] && generatedNodesList[3]?.[0]) {
+        // Paths are valid for the current graph structure.
     } else {
         // Fallback if graph is too shallow for defined paths
         if (generatedNodesList[0]?.[0] && generatedNodesList[1]?.[0]) {
-            paths.splice(0, paths.length, { nodeIds: [generatedNodesList[0][0].id, generatedNodesList[1][0].id] });
+             paths.splice(0, paths.length, { nodeIds: [generatedNodesList[0][0].id, generatedNodesList[1][0].id] });
+        } else {
+            paths.splice(0, paths.length); // No valid paths
         }
     }
-
 
     return { allNodes: flatNodes, allEdges: generatedEdgesList, definedPaths: paths };
   }, []);
@@ -167,12 +172,13 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     }, FADE_DURATION);
 
     return () => clearTimeout(fadeTimer);
-  }, [activePathIndex, definedPaths.length, highlightedElements]); // Added definedPaths.length and highlightedElements as dependencies
+  }, [activePathIndex, definedPaths]); // Corrected dependency array
+
 
   // Effect for step-by-step path construction (inner loop)
   useEffect(() => {
     if (definedPaths.length === 0 || activePathIndex >= definedPaths.length) return;
-
+    
     const currentPathDef = definedPaths[activePathIndex];
     if (!currentPathDef || currentStep >= currentPathDef.nodeIds.length) {
       // Path fully drawn, wait then advance to next path
@@ -208,8 +214,6 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
   const getNodeClass = useCallback((nodeId: string) => {
     if (highlightedElements.has(nodeId) && !fadingElements.has(nodeId)) return 'node-highlight';
     // Fading is handled by transition on removing highlight, so no explicit fading class needed if transitions are set on base/highlight states.
-    // If explicit fading style (e.g. to a different color before base) is needed, a fading class would be useful.
-    // For now, relying on transition from highlight to base.
     return 'node-base';
   }, [highlightedElements, fadingElements]);
 
@@ -218,9 +222,9 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     if (highlightedElements.has(edgeId) && !fadingElements.has(edgeId)) {
       classes = 'edge-highlight edge-drawing-active';
     }
-    // Similar to nodes, fading is handled by transition.
     return classes;
   }, [highlightedElements, fadingElements]);
+
 
   return (
     <svg
@@ -249,13 +253,13 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         .edge-base {
           stroke: hsl(var(--secondary)); 
           opacity: 0.2;
-          stroke-width: 0.22;
+          stroke-width: 0.22; /* Adjusted for density */
           transition: stroke ${FADE_DURATION}ms ease-out, opacity ${FADE_DURATION}ms ease-out, stroke-width ${FADE_DURATION}ms ease-out;
         }
         .edge-highlight {
           stroke: hsl(var(--primary)); 
           opacity: 0.7;
-          stroke-width: 0.35;
+          stroke-width: 0.35; /* Adjusted for density */
           transition: stroke ${STEP_DURATION * 0.5}ms ease-in, opacity ${STEP_DURATION * 0.5}ms ease-in, stroke-width ${STEP_DURATION * 0.5}ms ease-in;
         }
         /* .edge-fading could be used here too */
@@ -300,8 +304,6 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
     </svg>
   );
 }
-
 // nodeVisualRadii is defined at the top of the file.
 // Ensure the pulseNodeAnim keyframe uses the correct radius for the center node.
 // If nodeVisualRadii[0] is the center node's radius, the animation is correct.
-
