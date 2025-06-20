@@ -55,7 +55,7 @@ export default function ClientPage() {
   const directRoute = routeResult?.directRoute && routeResult.directRoute.length > 0 && routeResult.directEstimatedOutput && routeResult.directEstimatedOutput > 0 ? {
     route: routeResult.directRoute,
     estimatedOutput: routeResult.directEstimatedOutput,
-    gasEstimate: routeResult.directGasEstimate || 0,
+    gasEstimate: routeResult.directGasEstimate || 0, // Defaulting gasEstimate if undefined
   } : null;
 
 
@@ -71,8 +71,37 @@ export default function ClientPage() {
          </Alert>
       )}
 
+      {directRoute && (
+         <div className="max-w-full mx-auto space-y-6">
+          <RouteDiagram 
+            title="Direct Route (1 DEX)"
+            startToken={currentStartToken} 
+            initialAmount={currentInputAmount}
+            routeData={directRoute}
+          />
+           <Card className="shadow-lg max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                Direct Route Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-lg">
+              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
+                <span className="font-medium text-muted-foreground">Final Estimated Output:</span>
+                <span className="font-semibold text-primary">
+                  {directRoute.estimatedOutput.toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
+                  {directRoute.route[directRoute.route.length - 1]?.tokenOutSymbol} 
+                </span>
+              </div>
+              {/* Optionally add simulation for direct route too, or a simpler summary */}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {optimalRoute && (
-        <div className="max-w-full mx-auto space-y-6">
+        <div className={`max-w-full mx-auto space-y-6 ${directRoute ? 'mt-12' : ''}`}>
           <RouteDiagram 
             title="Optimal Swap Route (Multi-DEX)"
             startToken={currentStartToken} 
@@ -110,37 +139,7 @@ export default function ClientPage() {
           </Card>
         </div>
       )}
-
-      {directRoute && (
-         <div className="max-w-full mx-auto space-y-6 mt-12">
-          <RouteDiagram 
-            title="Direct Route (1 DEX)"
-            startToken={currentStartToken} 
-            initialAmount={currentInputAmount}
-            routeData={directRoute}
-          />
-           <Card className="shadow-lg max-w-2xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-xl font-headline text-center flex items-center justify-center gap-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                Direct Route Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-lg">
-              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
-                <span className="font-medium text-muted-foreground">Final Estimated Output:</span>
-                <span className="font-semibold text-primary">
-                  {directRoute.estimatedOutput.toLocaleString(undefined, { maximumFractionDigits: 6 })}{' '}
-                  {directRoute.route[directRoute.route.length - 1]?.tokenOutSymbol} 
-                </span>
-              </div>
-              {/* Optionally add simulation for direct route too */}
-            </CardContent>
-          </Card>
-        </div>
-      )}
       
-      {/* Simulation Dialog currently only for optimal route */}
       {optimalRoute && isSimulationOpen && (
         <SimulationDialog
           isOpen={isSimulationOpen}
@@ -153,4 +152,3 @@ export default function ClientPage() {
     </div>
   );
 }
-
