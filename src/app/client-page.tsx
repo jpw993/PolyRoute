@@ -37,13 +37,6 @@ export default function ClientPage() {
       };
       const result = await findOptimalRoute(input);
       setOptimalRoute(result);
-      // Do not show success toast here as per previous instructions to only use toast for errors.
-      // If a success toast is desired, it can be added back.
-      // toast({
-      //   title: "Optimal Route Found!",
-      //   description: "The best swap route has been calculated for you.",
-      //   variant: "default",
-      // });
     } catch (e) {
       console.error("Error finding optimal route:", e);
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
@@ -96,7 +89,7 @@ export default function ClientPage() {
               <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
                 <span className="font-medium text-muted-foreground">Estimated Gas Fee:</span>
                 <span className="font-semibold text-primary">
-                  {optimalRoute.gasEstimate.toLocaleString()} MATIC
+                  {optimalRoute.gasEstimate.toLocaleString()} POL
                 </span>
               </div>
               <div className="pt-4 text-center">

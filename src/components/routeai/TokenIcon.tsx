@@ -10,10 +10,9 @@ interface TokenIconProps extends LucideProps {
 const tokenIconMap: Record<string, React.ElementType<LucideProps>> = {
   'BTC': Bitcoin,
   'ETH': Coins, 
-  'MATIC': Coins, 
+  'POL': Coins, // Polygon's native token
   'USDC': CircleDollarSign,
   'DAI': CircleDollarSign,
-  'POL': Coins,
   'WETH': Coins, // Wrapped Ether often uses generic or ETH-like icon
   'WBTC': Bitcoin, // Wrapped Bitcoin uses Bitcoin icon
   'USDT': CircleDollarSign, // Tether is a stablecoin

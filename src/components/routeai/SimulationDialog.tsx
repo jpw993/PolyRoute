@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -53,7 +54,7 @@ export function SimulationDialog({
                 Estimated Gas Fee:
               </span>
               <span className="text-lg font-semibold text-foreground">
-                {gasEstimate.toLocaleString()} MATIC
+                {gasEstimate.toLocaleString()} POL
               </span>
             </div>
           )}

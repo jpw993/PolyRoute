@@ -26,7 +26,7 @@ interface RouteFormProps {
 }
 
 const availableTokens = [
-  { value: "MATIC", label: "MATIC (Polygon)" },
+  { value: "POL", label: "POL (Polygon)" },
   { value: "USDC", label: "USDC (USD Coin)" },
   { value: "DAI", label: "DAI (Dai Stablecoin)" },
   { value: "WETH", label: "WETH (Wrapped Ether)" },
