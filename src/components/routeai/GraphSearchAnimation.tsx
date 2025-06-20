@@ -8,6 +8,93 @@ interface GraphSearchAnimationProps {
 }
 
 export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
+  // Helper to generate node coordinates for a ring
+  const getRingNodes = (count: number, radius: number, offsetAngleDeg: number = 0) => {
+    const nodes = [];
+    const angleStep = 360 / count;
+    for (let i = 0; i < count; i++) {
+      const angleDeg = i * angleStep + offsetAngleDeg;
+      const angleRad = (angleDeg * Math.PI) / 180;
+      nodes.push({
+        cx: 50 + radius * Math.cos(angleRad),
+        cy: 50 - radius * Math.sin(angleRad), // SVG y-axis is inverted
+      });
+    }
+    return nodes;
+  };
+
+  const ring1Nodes = getRingNodes(6, 22); // Radius 22
+  const ring2Nodes = getRingNodes(20, 36, 9); // Radius 36, 20 nodes, slight offset
+  const ring3Nodes = getRingNodes(32, 47, 18); // Radius 47, 32 nodes, further offset
+
+  // Define edges: [fromNodeIdx, toNodeIdx, fromRing, toRing, isAnimated, delayFactor]
+  // Ring indices: 0=center, 1=ring1, 2=ring2, 3=ring3
+  const edges = [
+    // Center to Ring 1 (Animated)
+    ...ring1Nodes.map((_, i) => ({ from: {ring:0, idx:0}, to: {ring:1, idx:i}, animated: true, delay: i * 0.1 })),
+    
+    // Ring 1 to Ring 2 (Some Animated)
+    { from: {ring:1, idx:0}, to: {ring:2, idx:0}, animated: true, delay: 0.6 },
+    { from: {ring:1, idx:0}, to: {ring:2, idx:1}, animated: false },
+    { from: {ring:1, idx:0}, to: {ring:2, idx:19}, animated: false },
+    { from: {ring:1, idx:1}, to: {ring:2, idx:2}, animated: true, delay: 0.7 },
+    { from: {ring:1, idx:1}, to: {ring:2, idx:3}, animated: false },
+    { from: {ring:1, idx:1}, to: {ring:2, idx:4}, animated: true, delay: 0.75 },
+    { from: {ring:1, idx:2}, to: {ring:2, idx:5}, animated: false },
+    { from: {ring:1, idx:2}, to: {ring:2, idx:6}, animated: true, delay: 0.8 },
+    { from: {ring:1, idx:2}, to: {ring:2, idx:7}, animated: false },
+    { from: {ring:1, idx:3}, to: {ring:2, idx:8}, animated: true, delay: 0.9 },
+    { from: {ring:1, idx:3}, to: {ring:2, idx:9}, animated: false },
+    { from: {ring:1, idx:3}, to: {ring:2, idx:10}, animated: true, delay: 0.95 },
+    { from: {ring:1, idx:4}, to: {ring:2, idx:11}, animated: false },
+    { from: {ring:1, idx:4}, to: {ring:2, idx:12}, animated: true, delay: 1.0 },
+    { from: {ring:1, idx:4}, to: {ring:2, idx:13}, animated: false },
+    { from: {ring:1, idx:5}, to: {ring:2, idx:14}, animated: true, delay: 1.1 },
+    { from: {ring:1, idx:5}, to: {ring:2, idx:15}, animated: false },
+    { from: {ring:1, idx:5}, to: {ring:2, idx:16}, animated: true, delay: 1.15 },
+    { from: {ring:1, idx:0}, to: {ring:2, idx:17}, animated: false }, // connect back
+    { from: {ring:1, idx:0}, to: {ring:2, idx:18}, animated: false },
+
+
+    // Ring 2 to Ring 3 (Some Animated)
+    ...[0,3,6,9,12,15,18].map(i => ({ from: {ring:2, idx:i}, to: {ring:3, idx:i}, animated: true, delay: 1.2 + i*0.05})),
+    ...[1,4,7,10,13,16,19].map(i => ({ from: {ring:2, idx:i}, to: {ring:3, idx:i+1}, animated: true, delay: 1.25 + i*0.05})),
+    ...[2,5,8,11,14,17].map(i => ({ from: {ring:2, idx:i}, to: {ring:3, idx:i+2}, animated: true, delay: 1.3 + i*0.05})),
+    // Add some non-animated connections for density
+    { from: {ring:2, idx:0}, to: {ring:3, idx:31}, animated: false },
+    { from: {ring:2, idx:1}, to: {ring:3, idx:2}, animated: false },
+    { from: {ring:2, idx:2}, to: {ring:3, idx:4}, animated: false },
+    { from: {ring:2, idx:5}, to: {ring:3, idx:8}, animated: true, delay: 1.8},
+    { from: {ring:2, idx:8}, to: {ring:3, idx:12}, animated: false },
+    { from: {ring:2, idx:10}, to: {ring:3, idx:15}, animated: true, delay: 1.9},
+    { from: {ring:2, idx:13}, to: {ring:3, idx:19}, animated: false },
+    { from: {ring:2, idx:15}, to: {ring:3, idx:22}, animated: true, delay: 2.0},
+    { from: {ring:2, idx:18}, to: {ring:3, idx:27}, animated: false },
+    { from: {ring:2, idx:19}, to: {ring:3, idx:30}, animated: true, delay: 2.1},
+
+
+    // Intra-ring connections (mostly non-animated for visual structure)
+    // Ring 1
+    ...ring1Nodes.map((_,i) => ({from: {ring:1, idx:i}, to: {ring:1, idx:(i+1)%6}, animated: false})),
+    // Ring 2
+    ...ring2Nodes.map((_,i) => ({from: {ring:2, idx:i}, to: {ring:2, idx:(i+1)%20}, animated: false})),
+    // Ring 3
+    ...ring3Nodes.map((_,i) => ({from: {ring:3, idx:i}, to: {ring:3, idx:(i+1)%32}, animated: (i%4===0), delay: 1.5 + i*0.03})), // Some animated in Ring 3
+  ];
+
+  const nodeCollections = [
+    [{ cx: 50, cy: 50 }], // Center node
+    ring1Nodes,
+    ring2Nodes,
+    ring3Nodes,
+  ];
+
+  const getNodeCoords = (ringIdx: number, nodeIdx: number) => {
+    if (ringIdx === 0) return nodeCollections[0][0]; // Center node
+    return nodeCollections[ringIdx][nodeIdx];
+  };
+
+
   return (
     <svg
       width="100" 
@@ -26,147 +113,62 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         }
         .graph-edge {
           stroke: currentColor;
-          stroke-width: 1; 
+          stroke-width: 0.5; 
           stroke-linecap: round;
-          opacity: 0.3;
+          opacity: 0.2;
         }
         .graph-edge-active {
-          stroke-width: 1.5; 
-          opacity: 0.8;
+          stroke-width: 0.75; 
+          opacity: 0.7;
           animation: drawPathAnim 2.2s infinite linear;
         }
         @keyframes pulseNodeAnim {
-          0%, 100% { r: 5; opacity: 1; }
-          50% { r: 6.5; opacity: 0.7; }
+          0%, 100% { r: 4; opacity: 1; } /* Reduced center node size */
+          50% { r: 5; opacity: 0.7; }
         }
         @keyframes drawPathAnim {
-          0% { stroke-dasharray: 0, 200; stroke-dashoffset: 0; opacity: 0.4; }
-          50% { stroke-dasharray: 100, 200; stroke-dashoffset: -50; opacity: 1; }
-          100% { stroke-dasharray: 0, 200; stroke-dashoffset: -150; opacity: 0.4; }
+          0% { stroke-dasharray: 0, 100; stroke-dashoffset: 0; opacity: 0.3; }
+          50% { stroke-dasharray: 50, 100; stroke-dashoffset: -25; opacity: 0.9; }
+          100% { stroke-dasharray: 0, 100; stroke-dashoffset: -75; opacity: 0.3; }
         }
       `}</style>
 
+      {/* Render Edges */}
+      {edges.map((edge, index) => {
+        const n1 = getNodeCoords(edge.from.ring, edge.from.idx);
+        const n2 = getNodeCoords(edge.to.ring, edge.to.idx);
+        if (!n1 || !n2) return null;
+        return (
+          <line
+            key={`edge-${index}`}
+            className={`graph-edge ${edge.animated ? 'graph-edge-active' : ''}`}
+            x1={n1.cx}
+            y1={n1.cy}
+            x2={n2.cx}
+            y2={n2.cy}
+            style={edge.animated && edge.delay ? { animationDelay: `${edge.delay}s` } : {}}
+          />
+        );
+      })}
+
       {/* Center Node */}
-      <circle className="graph-node graph-node-center" cx="50" cy="50" r="6" />
+      <circle className="graph-node graph-node-center" cx="50" cy="50" r="4" />
       
-      {/* Ring 1 (6 nodes, r=4) - Original Inner Ring */}
-      <circle className="graph-node" cx="50" cy="25" r="4" /> {/* N1 */}
-      <circle className="graph-node" cx="71.6" cy="35" r="4" /> {/* NE1 */}
-      <circle className="graph-node" cx="71.6" cy="65" r="4" /> {/* SE1 */}
-      <circle className="graph-node" cx="50" cy="75" r="4" /> {/* S1 */}
-      <circle className="graph-node" cx="28.4" cy="65" r="4" /> {/* SW1 */}
-      <circle className="graph-node" cx="28.4" cy="35" r="4" /> {/* NW1 */}
+      {/* Ring 1 Nodes (r=3.5) */}
+      {ring1Nodes.map((node, i) => (
+        <circle key={`r1-${i}`} className="graph-node" cx={node.cx} cy={node.cy} r="3.5" />
+      ))}
 
-      {/* Edges from Center to Ring 1 (Animated) */}
-      <line className="graph-edge graph-edge-active" x1="50" y1="50" x2="50" y2="25" style={{ animationDelay: '0s' }}/>
-      <line className="graph-edge graph-edge-active" x1="50" y1="50" x2="71.6" y2="35" style={{ animationDelay: '0.1s' }}/>
-      <line className="graph-edge graph-edge-active" x1="50" y1="50" x2="71.6" y2="65" style={{ animationDelay: '0.2s' }}/>
-      <line className="graph-edge graph-edge-active" x1="50" y1="50" x2="50" y2="75" style={{ animationDelay: '0.3s' }}/>
-      <line className="graph-edge graph-edge-active" x1="50" y1="50" x2="28.4" y2="65" style={{ animationDelay: '0.4s' }}/>
-      <line className="graph-edge graph-edge-active" x1="50" y1="50" x2="28.4" y2="35" style={{ animationDelay: '0.5s' }}/>
+      {/* Ring 2 Nodes (r=2.5) */}
+      {ring2Nodes.map((node, i) => (
+        <circle key={`r2-${i}`} className="graph-node" cx={node.cx} cy={node.cy} r="2.5" />
+      ))}
 
-      {/* Edges connecting Ring 1 nodes */}
-      <line className="graph-edge" x1="50" y1="25" x2="71.6" y2="35"/>
-      <line className="graph-edge" x1="71.6" y1="35" x2="71.6" y2="65"/>
-      <line className="graph-edge" x1="71.6" y1="65" x2="50" y2="75"/>
-      <line className="graph-edge" x1="50" y1="75" x2="28.4" y2="65"/>
-      <line className="graph-edge" x1="28.4" y1="65" x2="28.4" y2="35"/>
-      <line className="graph-edge" x1="28.4" y1="35" x2="50" y2="25"/>
-
-      {/* Ring 2 (12 nodes, r=3.5), radius ~38 from center */}
-      <circle className="graph-node" cx="50" cy="12" r="3.5" /> 
-      <circle className="graph-node" cx="69" cy="17.1" r="3.5" /> 
-      <circle className="graph-node" cx="83" cy="31" r="3.5" /> 
-      <circle className="graph-node" cx="88" cy="50" r="3.5" /> 
-      <circle className="graph-node" cx="83" cy="69" r="3.5" /> 
-      <circle className="graph-node" cx="69" cy="82.9" r="3.5" /> 
-      <circle className="graph-node" cx="50" cy="88" r="3.5" /> 
-      <circle className="graph-node" cx="31" cy="82.9" r="3.5" /> 
-      <circle className="graph-node" cx="17" cy="69" r="3.5" /> 
-      <circle className="graph-node" cx="12" cy="50" r="3.5" /> 
-      <circle className="graph-node" cx="17" cy="31" r="3.5" /> 
-      <circle className="graph-node" cx="31" cy="17.1" r="3.5" /> 
-
-      {/* Edges from Ring 1 to Ring 2 (some animated) */}
-      <line className="graph-edge graph-edge-active" x1="50" y1="25" x2="50" y2="12" style={{ animationDelay: '0.6s' }}/> {/* N1 to R2_N */}
-      <line className="graph-edge" x1="50" y1="25" x2="31" y2="17.1"/> {/* N1 to R2_NNW */}
-      <line className="graph-edge" x1="71.6" y1="35" x2="69" y2="17.1" /> {/* NE1 to R2_NNE */}
-      <line className="graph-edge graph-edge-active" x1="71.6" y1="35" x2="83" y2="31" style={{ animationDelay: '0.7s' }}/> {/* NE1 to R2_ENE */}
-      <line className="graph-edge" x1="71.6" y1="65" x2="83" y2="69" /> {/* SE1 to R2_ESE */}
-      <line className="graph-edge graph-edge-active" x1="50" y1="75" x2="50" y2="88" style={{ animationDelay: '0.8s' }}/> {/* S1 to R2_S */}
-      <line className="graph-edge" x1="28.4" y1="65" x2="17" y2="69" /> {/* SW1 to R2_WSW */}
-      <line className="graph-edge graph-edge-active" x1="28.4" y1="35" x2="17" y2="31" style={{ animationDelay: '0.9s' }}/> {/* NW1 to R2_WNW */}
-      <line className="graph-edge" x1="71.6" y1="65" x2="88" y2="50" /> {/* SE1 to R2_E */}
-      <line className="graph-edge" x1="28.4" y1="65" x2="12" y2="50" /> {/* SW1 to R2_W */}
-
-      {/* Edges connecting Ring 2 nodes */}
-      <line className="graph-edge" x1="50" y1="12" x2="69" y2="17.1"/>
-      <line className="graph-edge" x1="69" y1="17.1" x2="83" y2="31"/>
-      <line className="graph-edge" x1="83" y1="31" x2="88" y2="50"/>
-      <line className="graph-edge" x1="88" y1="50" x2="83" y2="69"/>
-      <line className="graph-edge" x1="83" y1="69" x2="69" y2="82.9"/>
-      <line className="graph-edge" x1="69" y1="82.9" x2="50" y2="88"/>
-      <line className="graph-edge" x1="50" y1="88" x2="31" y2="82.9"/>
-      <line className="graph-edge" x1="31" y1="82.9" x2="17" y2="69"/>
-      <line className="graph-edge" x1="17" y1="69" x2="12" y2="50"/>
-      <line className="graph-edge" x1="12" y1="50" x2="17" y2="31"/>
-      <line className="graph-edge" x1="17" y1="31" x2="31" y2="17.1"/>
-      <line className="graph-edge" x1="31" y1="17.1" x2="50" y2="12"/>
+      {/* Ring 3 Nodes (r=2) */}
+      {ring3Nodes.map((node, i) => (
+        <circle key={`r3-${i}`} className="graph-node" cx={node.cx} cy={node.cy} r="2" />
+      ))}
       
-      {/* Ring 3 (16 nodes, r=3), radius ~46 from center */}
-      <circle className="graph-node" cx="50" cy="4" r="3" />
-      <circle className="graph-node" cx="67.6" cy="8.4" r="3" />
-      <circle className="graph-node" cx="81.8" cy="18.2" r="3" />
-      <circle className="graph-node" cx="91.6" cy="32.4" r="3" />
-      <circle className="graph-node" cx="96" cy="50" r="3" />
-      <circle className="graph-node" cx="91.6" cy="67.6" r="3" />
-      <circle className="graph-node" cx="81.8" cy="81.8" r="3" />
-      <circle className="graph-node" cx="67.6" cy="91.6" r="3" />
-      <circle className="graph-node" cx="50" cy="96" r="3" />
-      <circle className="graph-node" cx="32.4" cy="91.6" r="3" />
-      <circle className="graph-node" cx="18.2" cy="81.8" r="3" />
-      <circle className="graph-node" cx="8.4" cy="67.6" r="3" />
-      <circle className="graph-node" cx="4" cy="50" r="3" />
-      <circle className="graph-node" cx="8.4" cy="32.4" r="3" />
-      <circle className="graph-node" cx="18.2" cy="18.2" r="3" />
-      <circle className="graph-node" cx="32.4" cy="8.4" r="3" />
-
-      {/* Edges from Ring 2 to Ring 3 (some animated) */}
-      <line className="graph-edge graph-edge-active" x1="50" y1="12" x2="50" y2="4" style={{ animationDelay: '1.0s' }}/>
-      <line className="graph-edge" x1="69" y1="17.1" x2="67.6" y2="8.4"/>
-      <line className="graph-edge graph-edge-active" x1="83" y1="31" x2="81.8" y2="18.2" style={{ animationDelay: '1.1s' }}/>
-      <line className="graph-edge" x1="88" y1="50" x2="91.6" y2="32.4"/>
-      <line className="graph-edge" x1="88" y1="50" x2="96" y2="50"/>
-      <line className="graph-edge graph-edge-active" x1="83" y1="69" x2="91.6" y2="67.6" style={{ animationDelay: '1.2s' }}/>
-      <line className="graph-edge" x1="69" y1="82.9" x2="81.8" y2="81.8"/>
-      <line className="graph-edge graph-edge-active" x1="50" y1="88" x2="67.6" y2="91.6" style={{ animationDelay: '1.3s' }}/>
-      <line className="graph-edge" x1="50" y1="88" x2="50" y2="96"/>
-      <line className="graph-edge" x1="31" y1="82.9" x2="32.4" y2="91.6"/>
-      <line className="graph-edge graph-edge-active" x1="17" y1="69" x2="18.2" y2="81.8" style={{ animationDelay: '1.4s' }}/>
-      <line className="graph-edge" x1="12" y1="50" x2="8.4" y2="67.6"/>
-      <line className="graph-edge" x1="12" y1="50" x2="4" y2="50"/>
-      <line className="graph-edge graph-edge-active" x1="17" y1="31" x2="8.4" y2="32.4" style={{ animationDelay: '1.5s' }}/>
-      <line className="graph-edge" x1="31" y1="17.1" x2="18.2" y2="18.2"/>
-      <line className="graph-edge graph-edge-active" x1="31" y1="17.1" x2="32.4" y2="8.4" style={{ animationDelay: '1.6s' }}/>
-
-      {/* Edges connecting Ring 3 nodes (selected ones) */}
-      <line className="graph-edge" x1="50" y1="4" x2="67.6" y2="8.4"/>
-      <line className="graph-edge" x1="81.8" y1="18.2" x2="91.6" y2="32.4"/>
-      <line className="graph-edge" x1="96" y1="50" x2="91.6" y2="67.6"/>
-      <line className="graph-edge" x1="81.8" y1="81.8" x2="67.6" y2="91.6"/>
-      <line className="graph-edge" x1="50" y1="96" x2="32.4" y2="91.6"/>
-      <line className="graph-edge" x1="18.2" y1="81.8" x2="8.4" y2="67.6"/>
-      <line className="graph-edge" x1="4" y1="50" x2="8.4" y2="32.4"/>
-      <line className="graph-edge" x1="18.2" y1="18.2" x2="32.4" y2="8.4"/>
-      {/* Closing the ring */}
-       <line className="graph-edge" x1="32.4" y1="8.4" x2="50" y2="4"/>
-       <line className="graph-edge" x1="67.6" y1="8.4" x2="81.8" y2="18.2"/>
-       <line className="graph-edge" x1="91.6" y1="32.4" x2="96" y2="50"/>
-       <line className="graph-edge" x1="91.6" y1="67.6" x2="81.8" y2="81.8"/>
-       <line className="graph-edge" x1="67.6" y1="91.6" x2="50" y2="96"/>
-       <line className="graph-edge" x1="32.4" y1="91.6" x2="18.2" y2="81.8"/>
-       <line className="graph-edge" x1="8.4" y1="67.6" x2="4" y2="50"/>
-       <line className="graph-edge" x1="8.4" y1="32.4" x2="18.2" y2="18.2"/>
     </svg>
   );
 }
