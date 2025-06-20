@@ -36,20 +36,20 @@ export default function ClientPage() {
   const optimalRouteDiagramRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (directRouteData && directRouteDiagramRef.current) {
+    if (directRouteData !== undefined && !isLoadingDirect && directRouteDiagramRef.current) {
       directRouteDiagramRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [directRouteData]);
+  }, [directRouteData, isLoadingDirect]);
 
   useEffect(() => {
-    if (optimalRouteData && optimalRouteDiagramRef.current) {
+    if (optimalRouteData && !isLoadingOptimal && optimalRouteDiagramRef.current) {
       optimalRouteDiagramRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [optimalRouteData]);
+  }, [optimalRouteData, isLoadingOptimal]);
 
   const handleFormSubmit = async (values: RouteFormValues) => {
     setIsLoadingDirect(true);
-    setIsLoadingOptimal(false); // Ensure optimal loading is false initially
+    setIsLoadingOptimal(false); 
     setError(null);
     setDirectRouteData(undefined); 
     setOptimalRouteData(undefined);
@@ -65,7 +65,6 @@ export default function ClientPage() {
     let fetchedDirectRoute: SingleRoute | null = null;
 
     try {
-      // Step 1: Calculate Direct Route
       fetchedDirectRoute = await calculateDirectRouteOnly(routeInput);
       setDirectRouteData(fetchedDirectRoute);
     } catch (e) {
@@ -77,34 +76,34 @@ export default function ClientPage() {
         description: errorMessage,
         variant: "destructive",
       });
-      // Optionally, stop here or try to calculate optimal anyway
-      // For now, we'll stop if direct fails critically, though optimal could still work.
-      // Or, allow optimal to proceed:
-      // fetchedDirectRoute = null; // proceed with optimal calculation
     } finally {
       setIsLoadingDirect(false);
     }
 
-    // Step 2: Calculate Optimal Route (even if direct failed or was null)
-    setIsLoadingOptimal(true);
-    try {
-      const optimalInput: OptimalRouteCalculationInput = {
-        mainInput: routeInput,
-        directResult: fetchedDirectRoute // This can be null
-      };
-      const resultOptimal = await calculateOptimalRouteWithOptionalDirect(optimalInput);
-      setOptimalRouteData(resultOptimal);
-    } catch (e) {
-      console.error("Error finding optimal route:", e);
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred during optimal route calculation.";
-      setError(error ? `${error}\nAdditionally, failed to find optimal route: ${errorMessage}` : `Failed to find optimal route: ${errorMessage}`);
-      toast({
-        title: "Error Finding Optimal Route",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingOptimal(false);
+    // Proceed to calculate optimal route regardless of direct route outcome (unless critical error stopped us)
+    // but only if there wasn't an error that should halt everything.
+    // For now, we'll assume we always try optimal if direct didn't throw an unrecoverable error.
+    if (!error || (error && !error.startsWith("Failed to find direct route:"))) { // Basic check to not proceed if direct had major issues
+      setIsLoadingOptimal(true);
+      try {
+        const optimalInput: OptimalRouteCalculationInput = {
+          mainInput: routeInput,
+          directResult: fetchedDirectRoute 
+        };
+        const resultOptimal = await calculateOptimalRouteWithOptionalDirect(optimalInput);
+        setOptimalRouteData(resultOptimal);
+      } catch (e) {
+        console.error("Error finding optimal route:", e);
+        const errorMessage = e instanceof Error ? e.message : "An unknown error occurred during optimal route calculation.";
+        setError(prevError => prevError ? `${prevError}\nAdditionally, failed to find optimal route: ${errorMessage}` : `Failed to find optimal route: ${errorMessage}`);
+        toast({
+          title: "Error Finding Optimal Route",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingOptimal(false);
+      }
     }
   };
   
@@ -140,7 +139,7 @@ export default function ClientPage() {
         </div>
       )}
 
-      {directRouteData !== undefined && ( // Render if calculation is done (null means no route, object means route found)
+      {directRouteData !== undefined && !isLoadingDirect && ( 
         <div ref={directRouteDiagramRef} className="flex justify-center max-w-full mx-auto">
           {directRouteData ? (
             <RouteDiagram 
@@ -150,7 +149,7 @@ export default function ClientPage() {
               routeData={directRouteData}
             />
           ) : (
-            !isLoadingDirect && currentStartToken && ( // Only show "no route" if not loading and form was submitted
+            currentStartToken && ( 
               <Card className="shadow-lg max-w-2xl mx-auto w-full">
                 <CardHeader>
                   <CardTitle className="text-xl font-headline text-center">Direct Route (Single-DEX)</CardTitle>
@@ -171,7 +170,7 @@ export default function ClientPage() {
         </div>
       )}
 
-      {optimalRouteData && (
+      {optimalRouteData && !isLoadingOptimal && (
         <div ref={optimalRouteDiagramRef} className="max-w-full mx-auto space-y-6 flex flex-col items-center">
           <div className="flex justify-center max-w-full mx-auto">
             <RouteDiagram 
@@ -211,10 +210,10 @@ export default function ClientPage() {
                 </div>
               )}
               
-              {!directRouteData && optimalRouteData.estimatedOutput > 0 && (
+              {!directRouteData && optimalRouteData.estimatedOutput > 0 && ( // If direct route wasn't found but optimal was
                 <div className="flex justify-between items-center p-3 bg-blue-100 dark:bg-blue-900/30 rounded-md">
                    <span className="font-medium text-blue-700 dark:text-blue-400">
-                    Note: No direct route was found for comparison.
+                    Note: No direct route was found for comparison. The optimal route was calculated independently.
                   </span>
                 </div>
               )}
@@ -248,3 +247,6 @@ export default function ClientPage() {
     </div>
   );
 }
+
+
+    

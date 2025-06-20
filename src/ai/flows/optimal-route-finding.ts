@@ -240,8 +240,8 @@ async function _calculateOptimalMultiStepRouteInternal(
     if (currentAmount <= 0 && path.indexOf([targetToken, dex]) < path.length -1) break; 
   }
   
-  // Simulate some processing time
-  await new Promise(resolve => setTimeout(resolve, 150 + Math.random() * 250));
+  // Simulate some processing time: ~5 seconds
+  await new Promise(resolve => setTimeout(resolve, 4700 + Math.random() * 600));
 
   let finalMultiStepOutput = (detailedRoute.length > 0 && detailedRoute[detailedRoute.length - 1].amountOut > 0)
                               ? detailedRoute[detailedRoute.length - 1].amountOut
@@ -281,8 +281,8 @@ async function _calculateOptimalMultiStepRouteInternal(
 
 export async function calculateDirectRouteOnly(input: RouteCalculationInput): Promise<SingleRoute | null> {
   const { startToken, endToken, amount } = input;
-  // Simulate a small delay for direct route calculation
-  await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
+  // Simulate a small delay for direct route calculation: ~2 seconds
+  await new Promise(resolve => setTimeout(resolve, 1800 + Math.random() * 400));
   return _calculateDirectRouteInternal(startToken, endToken, amount);
 }
 
@@ -292,5 +292,7 @@ export async function calculateOptimalRouteWithOptionalDirect(input: OptimalRout
   return _calculateOptimalMultiStepRouteInternal(startToken, endToken, amount, directResult);
 }
 
+
+    
 
     
