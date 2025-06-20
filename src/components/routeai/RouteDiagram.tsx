@@ -1,6 +1,6 @@
 
 import type { FindOptimalRouteOutput } from '@/ai/flows/optimal-route-finding';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TokenIcon } from './TokenIcon';
 import { ArrowRight } from 'lucide-react';
 import React from 'react';
@@ -89,3 +89,4 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
     </Card>
   );
 }
+
