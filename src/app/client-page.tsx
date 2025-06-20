@@ -121,7 +121,7 @@ export default function ClientPage() {
                 <div className="flex justify-between items-center p-3 bg-green-100 dark:bg-green-900/30 rounded-md">
                   <span className="font-medium text-green-700 dark:text-green-400 flex items-center gap-1">
                     <TrendingUp className="h-5 w-5" />
-                    Advantage vs Direct:
+                    Saving vs Direct:
                   </span>
                   <span className="font-semibold text-green-700 dark:text-green-300">
                     +{advantageAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {endTokenSymbolForAdvantage}
