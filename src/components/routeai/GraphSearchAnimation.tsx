@@ -3,9 +3,9 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
-const STEP_DURATION = 100; // ms, duration for one step (node/edge reveal)
-const PATH_COMPLETED_PAUSE = 500; // ms, pause after a path is fully drawn
-const FADE_DURATION = 170;   // ms, duration for fading out old path
+const STEP_DURATION = 33; // ms, duration for one step (node/edge reveal)
+const PATH_COMPLETED_PAUSE = 167; // ms, pause after a path is fully drawn
+const FADE_DURATION = 57;   // ms, duration for fading out old path
 
 interface GraphSearchAnimationProps {
   className?: string;
@@ -242,7 +242,7 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
         }
         
         .node-center-pulse {
-          animation: pulseNodeAnim 0.5s infinite ease-in-out;
+          animation: pulseNodeAnim 0.17s infinite ease-in-out;
         }
         
         .edge-base {
@@ -300,3 +300,4 @@ export function GraphSearchAnimation({ className }: GraphSearchAnimationProps) {
 // Ensure the pulseNodeAnim keyframe uses the correct radius for the center node.
 // If nodeVisualRadii[0] is the center node's radius, the animation is correct.
 
+    
