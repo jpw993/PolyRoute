@@ -1,3 +1,4 @@
+
 import { ArrowRight } from 'lucide-react';
 import { TokenIcon } from './TokenIcon';
 import { Card } from '@/components/ui/card';
@@ -15,8 +16,8 @@ interface RouteStepProps {
 export function RouteStep({ isFirst = false, token, dex, animationDelay, 'data-ai-hint': aiHint }: RouteStepProps) {
   return (
     <div
-      className="flex items-center route-step-animation opacity-0"
-      style={{ animationDelay, animationFillMode: 'forwards', animationName: 'route-step-เข้ามา', animationDuration: '0.5s' }}
+      className="flex items-center opacity-0 animate-route-step-เข้ามา" // Use Tailwind animation class, keep opacity-0 for initial state
+      style={{ animationDelay }} // animation-duration and fill-mode are in tailwind.config.ts
       data-testid={`route-step-${token}`}
     >
       {!isFirst && dex && (
@@ -36,7 +37,7 @@ export function RouteStep({ isFirst = false, token, dex, animationDelay, 'data-a
   );
 }
 
-// Add keyframes to tailwind.config.ts if not already there
+// Keyframes and animation utility 'animate-route-step-เข้ามา' are defined in tailwind.config.ts
 // @keyframes route-step-เข้ามา {
 //   '0%': { opacity: '0', transform: 'translateY(10px)' },
 //   '100%': { opacity: '1', transform: 'translateY(0)' },
