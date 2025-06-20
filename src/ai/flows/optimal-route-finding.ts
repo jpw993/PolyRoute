@@ -1,14 +1,14 @@
+
 'use server';
 
 /**
- * @fileOverview AI agent for finding the optimal swap route for token conversions on the Polygon Blockchain.
+ * @fileOverview Logic for finding a swap route for token conversions on the Polygon Blockchain.
  *
- * - findOptimalRoute - A function that handles the process of finding the optimal route.
+ * - findOptimalRoute - A function that handles the process of finding a route.
  * - FindOptimalRouteInput - The input type for the findOptimalRoute function.
  * - FindOptimalRouteOutput - The return type for the findOptimalRoute function.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const FindOptimalRouteInputSchema = z.object({
@@ -31,39 +31,78 @@ const FindOptimalRouteOutputSchema = z.object({
 export type FindOptimalRouteOutput = z.infer<typeof FindOptimalRouteOutputSchema>;
 
 export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<FindOptimalRouteOutput> {
-  return findOptimalRouteFlow(input);
-}
+  const { startToken, endToken, amount } = input;
+  let route: FindOptimalRouteOutput['route'] = [];
+  let estimatedOutput: number = amount;
+  let gasEstimate: number = 0.05; // Base gas estimate
 
-const prompt = ai.definePrompt({
-  name: 'findOptimalRoutePrompt',
-  input: {schema: FindOptimalRouteInputSchema},
-  output: {schema: FindOptimalRouteOutputSchema},
-  prompt: `You are an AI-powered DEX aggregator specializing in finding optimal routes for token swaps on the Polygon Blockchain.
+  const st = startToken.toUpperCase();
+  const et = endToken.toUpperCase();
 
-  Given a starting token, an ending token and an amount to swap, find the best route for the swap.
-  The route should include the token and DEX for each step.
-  Also estimate the final output and gas fees for the route.
-
-  Start Token: {{{startToken}}}
-  End Token: {{{endToken}}}
-  Amount: {{{amount}}}
-
-  Consider top DEXes in the Polygon chain such as Quickswap, Sushiswap, and Uniswap.
-  Ensure that the route is efficient and minimizes gas costs.
-  Use real-time data to provide the most accurate estimates.
-
-  Output the route, estimated output and gas estimate in the JSON format specified in the output schema.
-`,
-});
-
-const findOptimalRouteFlow = ai.defineFlow(
-  {
-    name: 'findOptimalRouteFlow',
-    inputSchema: FindOptimalRouteInputSchema,
-    outputSchema: FindOptimalRouteOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  if (st === et) {
+    route = [{ token: et, dex: 'Direct' }];
+    estimatedOutput = amount;
+    gasEstimate = 0.01;
+  } else if (st === 'MATIC' && et === 'USDC') {
+    route = [{ token: 'USDC', dex: 'Quickswap' }];
+    estimatedOutput = amount * 0.995;
+    gasEstimate = 0.1;
+  } else if (st === 'USDC' && et === 'MATIC') {
+    route = [{ token: 'MATIC', dex: 'Quickswap' }];
+    estimatedOutput = amount * 0.995;
+    gasEstimate = 0.1;
+  } else if (st === 'USDC' && et === 'DAI') {
+    route = [{ token: 'DAI', dex: 'Sushiswap' }];
+    estimatedOutput = amount * 0.99;
+    gasEstimate = 0.12;
+  } else if (st === 'DAI' && et === 'USDC') {
+    route = [{ token: 'USDC', dex: 'Sushiswap' }];
+    estimatedOutput = amount * 0.99;
+    gasEstimate = 0.12;
+  } else if (st === 'MATIC' && et === 'DAI') {
+    route = [
+      { token: 'USDC', dex: 'Quickswap' },
+      { token: 'DAI', dex: 'Sushiswap' },
+    ];
+    estimatedOutput = amount * 0.995 * 0.99;
+    gasEstimate = 0.2;
+  } else if (st === 'DAI' && et === 'MATIC') {
+     route = [
+      { token: 'USDC', dex: 'Sushiswap' },
+      { token: 'MATIC', dex: 'Quickswap' },
+    ];
+    estimatedOutput = amount * 0.99 * 0.995;
+    gasEstimate = 0.2;
+  } else if (st === 'WETH' && et === 'USDC') {
+    route = [{ token: 'USDC', dex: 'Uniswap' }];
+    estimatedOutput = amount * 0.993;
+    gasEstimate = 0.15;
+  } else if (st === 'USDC' && et === 'WETH') {
+    route = [{ token: 'WETH', dex: 'Uniswap' }];
+    estimatedOutput = amount * 0.993;
+    gasEstimate = 0.15;
+  } else if (st === 'WBTC' && et === 'USDC') {
+    route = [{ token: 'USDC', dex: 'Curve' }];
+    estimatedOutput = amount * 0.992;
+    gasEstimate = 0.16;
+  } else if (st === 'USDC' && et === 'WBTC') {
+    route = [{ token: 'WBTC', dex: 'Curve' }];
+    estimatedOutput = amount * 0.992;
+    gasEstimate = 0.16;
+  } else {
+    // Fallback for unhandled pairs: a single step via a generic DEX
+    // Or return an empty route to indicate no simple path found
+    route = [{ token: et, dex: 'GenericDEX' }];
+    estimatedOutput = amount * 0.98; // Simulate higher slippage/fees
+    gasEstimate = 0.18;
   }
-);
+  
+  // Simulate a short delay as if an API call was made
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  return {
+    route,
+    estimatedOutput: parseFloat(estimatedOutput.toFixed(6)),
+    gasEstimate: parseFloat(gasEstimate.toFixed(4)),
+  };
+}
