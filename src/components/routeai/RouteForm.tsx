@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Search } from "lucide-react";
+import { TokenIcon } from './TokenIcon';
 
 const routeFormSchema = z.object({
   startToken: z.string().min(1, "Please select a start token."),
@@ -72,7 +73,10 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                     <SelectContent>
                       {availableTokens.map(token => (
                         <SelectItem key={`start-${token.value}`} value={token.value}>
-                          {token.label}
+                          <div className="flex items-center gap-2">
+                            <TokenIcon tokenSymbol={token.value} className="h-5 w-5" />
+                            {token.label}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -96,7 +100,10 @@ export function RouteForm({ onSubmit, isLoading }: RouteFormProps) {
                     <SelectContent>
                       {availableTokens.map(token => (
                         <SelectItem key={`end-${token.value}`} value={token.value}>
-                          {token.label}
+                          <div className="flex items-center gap-2">
+                            <TokenIcon tokenSymbol={token.value} className="h-5 w-5" />
+                            {token.label}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
