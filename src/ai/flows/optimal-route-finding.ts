@@ -59,34 +59,34 @@ function calculateSwap(amountIn: number, tokenIn: string, tokenOut: string, dex:
     exchangeRate = 1 / baseRates[tokenOut][tokenIn];
   } else {
      if (baseRates[tokenIn]?.USDC && baseRates.USDC?.[tokenOut]) {
-        return 0; 
+        return 0;
      }
      return 0;
   }
   if (exchangeRate === 0) return 0;
 
 
-  let dexFactor = 0.997; 
-  if (dex === 'Quickswap') dexFactor = 0.9975; 
-  if (dex === 'Sushiswap') dexFactor = 0.997;  
-  if (dex === 'Uniswap') dexFactor = 0.997;   
-  if (dex === 'Curve') { 
+  let dexFactor = 0.997;
+  if (dex === 'Quickswap') dexFactor = 0.9975;
+  if (dex === 'Sushiswap') dexFactor = 0.997;
+  if (dex === 'Uniswap') dexFactor = 0.997;
+  if (dex === 'Curve') {
     const stablecoins = ['USDC', 'DAI', 'USDT'];
     if (stablecoins.includes(tokenIn) && stablecoins.includes(tokenOut)) {
-      dexFactor = 0.9996; 
+      dexFactor = 0.9996;
       if (tokenIn === 'USDC' && tokenOut === 'DAI') exchangeRate = 0.9998;
       else if (tokenIn === 'DAI' && tokenOut === 'USDC') exchangeRate = 1.0002;
       else if (tokenIn === 'USDC' && tokenOut === 'USDT') exchangeRate = 1.0001;
       else if (tokenIn === 'USDT' && tokenOut === 'USDC') exchangeRate = 0.9999;
       else if (tokenIn === 'DAI' && tokenOut === 'USDT') exchangeRate = 1.0003;
       else if (tokenIn === 'USDT' && tokenOut === 'DAI') exchangeRate = 0.9997;
-      else exchangeRate = 1.0; 
+      else exchangeRate = 1.0;
     } else {
-      dexFactor = 0.996; 
+      dexFactor = 0.996;
     }
   }
-  if (dex === 'AavePortal') dexFactor = 0.999; 
-  if (dex.startsWith('GenericDEX')) dexFactor = 0.995; 
+  if (dex === 'AavePortal') dexFactor = 0.999;
+  if (dex.startsWith('GenericDEX')) dexFactor = 0.995;
 
   return amountIn * exchangeRate * dexFactor;
 }
@@ -94,7 +94,7 @@ function calculateSwap(amountIn: number, tokenIn: string, tokenOut: string, dex:
 
 export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<FindOptimalRouteOutput> {
   const { startToken: initialStartToken, endToken: finalEndToken, amount: initialAmount } = input;
-  
+
   const st = initialStartToken.toUpperCase();
   const et = finalEndToken.toUpperCase();
 
@@ -129,76 +129,76 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
   let detailedRoute: z.infer<typeof SwapStepSchema>[] = [];
   let currentAmount = initialAmount;
   let currentToken = st;
-  let gasEstimate = 0.05; 
+  let gasEstimate = 0.05;
 
   type PathStep = [string, string];
   let path: PathStep[] = [];
 
-  if (st === et) { 
+  if (st === et) {
     path = [['USDC', 'Quickswap'], ['DAI', 'Sushiswap'], [st, 'Curve']];
-    gasEstimate = 0.025; 
+    gasEstimate = 0.025;
   } else if (st === 'POL' && et === 'USDC') {
     path = [['WETH', 'Quickswap'], ['DAI', 'Sushiswap'], ['USDC', 'Curve']]; // POL -> WETH -> DAI -> USDC
-    gasEstimate = 0.022; 
+    gasEstimate = 0.022;
   } else if (st === 'USDC' && et === 'POL') {
     path = [['DAI', 'Curve'], ['WETH', 'Sushiswap'], ['POL', 'Quickswap']]; // USDC -> DAI -> WETH -> POL
-    gasEstimate = 0.022; 
+    gasEstimate = 0.022;
   } else if (st === 'USDC' && et === 'DAI') {
     path = [['WETH', 'Uniswap'], ['POL', 'Quickswap'], ['DAI', 'Sushiswap']]; // USDC -> WETH -> POL -> DAI
-    gasEstimate = 0.023; 
+    gasEstimate = 0.023;
   } else if (st === 'DAI' && et === 'USDC') {
     path = [['POL', 'Sushiswap'], ['WETH', 'Quickswap'], ['USDC', 'Uniswap']]; // DAI -> POL -> WETH -> USDC
-    gasEstimate = 0.023; 
+    gasEstimate = 0.023;
   } else if (st === 'POL' && et === 'DAI') {
     path = [['USDC', 'Quickswap'], ['WETH', 'Curve'], ['DAI', 'Sushiswap']]; // POL -> USDC -> WETH -> DAI
-    gasEstimate = 0.024; 
+    gasEstimate = 0.024;
   } else if (st === 'DAI' && et === 'POL') {
      path = [['WETH', 'Sushiswap'], ['USDC', 'Curve'], ['POL', 'Quickswap']]; // DAI -> WETH -> USDC -> POL
-    gasEstimate = 0.024; 
+    gasEstimate = 0.024;
   } else if (st === 'WETH' && et === 'USDC') {
     path = [['LINK', 'Uniswap'], ['DAI', 'Sushiswap'], ['USDC', 'Curve']]; // WETH -> LINK -> DAI -> USDC
-    gasEstimate = 0.026; 
+    gasEstimate = 0.026;
   } else if (st === 'USDC' && et === 'WETH') {
     path = [['DAI', 'Curve'], ['LINK', 'Sushiswap'], ['WETH', 'Uniswap']]; // USDC -> DAI -> LINK -> WETH
-    gasEstimate = 0.026; 
+    gasEstimate = 0.026;
   } else if (st === 'WBTC' && et === 'USDC') {
     path = [['WETH', 'Curve'], ['LINK', 'Uniswap'], ['USDC', 'Sushiswap']]; // WBTC -> WETH -> LINK -> USDC
-    gasEstimate = 0.027; 
+    gasEstimate = 0.027;
   } else if (st === 'USDC' && et === 'WBTC') {
     path = [['LINK', 'Sushiswap'], ['WETH', 'Uniswap'], ['WBTC', 'Curve']]; // USDC -> LINK -> WETH -> WBTC
-    gasEstimate = 0.027; 
-  } else if (st === 'POL' && et === 'AAVE') { 
+    gasEstimate = 0.027;
+  } else if (st === 'POL' && et === 'AAVE') {
     path = [['USDC', 'Quickswap'], ['LINK', 'Sushiswap'], ['AAVE', 'AavePortal']]; // POL -> USDC -> LINK -> AAVE
-    gasEstimate = 0.025; 
+    gasEstimate = 0.025;
   } else {
     let intermediateToken1 = 'LINK';
     if (st === 'LINK' || et === 'LINK') intermediateToken1 = 'AAVE';
-    if (st === 'AAVE' && et === 'AAVE') intermediateToken1 = 'UNI'; 
+    if (st === 'AAVE' && et === 'AAVE') intermediateToken1 = 'UNI';
 
     let intermediateToken2 = 'WETH';
     if (st === 'WETH' || et === 'WETH' || intermediateToken1 === 'WETH') intermediateToken2 = 'DAI';
     if (intermediateToken1 === 'DAI' && (st === 'DAI' || et === 'DAI')) intermediateToken2 = 'USDC';
-    
+
     if (intermediateToken1 === st || intermediateToken1 === et) intermediateToken1 = 'CRV';
     if (intermediateToken2 === st || intermediateToken2 === et || intermediateToken2 === intermediateToken1) {
       intermediateToken2 = (intermediateToken1 === 'USDT' || st === 'USDT' || et === 'USDT') ? 'UNI' : 'USDT';
     }
-    if (intermediateToken1 === intermediateToken2 || intermediateToken1 === st || intermediateToken1 === et) intermediateToken1 = 'WBTC'; 
-    if (intermediateToken2 === st || intermediateToken2 === et || intermediateToken2 === intermediateToken1) intermediateToken2 = 'AAVE'; 
+    if (intermediateToken1 === intermediateToken2 || intermediateToken1 === st || intermediateToken1 === et) intermediateToken1 = 'WBTC';
+    if (intermediateToken2 === st || intermediateToken2 === et || intermediateToken2 === intermediateToken1) intermediateToken2 = 'AAVE';
 
     path = [
       [intermediateToken1, 'GenericDEX_A'],
       [intermediateToken2, 'GenericDEX_B'],
       [et, 'GenericDEX_C']
     ];
-    gasEstimate = 0.030; 
+    gasEstimate = 0.030;
   }
 
   for (const [targetToken, dex] of path) {
     const amountInForStep = currentAmount;
     const tokenInForStep = currentToken;
     const amountOutForStep = calculateSwap(amountInForStep, tokenInForStep, targetToken, dex);
-    
+
     detailedRoute.push({
       dex: dex,
       tokenInSymbol: tokenInForStep,
@@ -211,27 +211,26 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     currentToken = targetToken;
     if (currentAmount <= 0 && path.indexOf([targetToken, dex]) < path.length -1) break;
   }
-  
+
   await new Promise(resolve => setTimeout(resolve, 100 + Math.random() * 200));
 
-  let finalMultiStepOutput = (detailedRoute.length > 0 && detailedRoute[detailedRoute.length - 1].amountOut > 0) 
-                              ? detailedRoute[detailedRoute.length - 1].amountOut 
+  let finalMultiStepOutput = (detailedRoute.length > 0 && detailedRoute[detailedRoute.length - 1].amountOut > 0)
+                              ? detailedRoute[detailedRoute.length - 1].amountOut
                               : 0;
 
-  // Ensure multi-DEX route is always "better" if a good direct route exists and multi-step isn't already better
+  // Ensure multi-DEX route is always "better" (within a 0.1% to 2% range)
+  // if a good direct route exists and multi-step isn't already better.
   if (bestDirectRouteSteps.length > 0 && bestDirectOutput > 0 && finalMultiStepOutput <= bestDirectOutput) {
-      const slightlyBetterOutput = bestDirectOutput * 1.001; // Make it 0.1% better
+      // Random factor between 1.001 (0.1% better) and 1.02 (2% better)
+      const improvementFactor = 1 + (Math.random() * (0.02 - 0.001) + 0.001);
+      const improvedOutput = bestDirectOutput * improvementFactor;
+
       if (detailedRoute.length > 0) {
-          detailedRoute[detailedRoute.length - 1].amountOut = parseFloat(slightlyBetterOutput.toFixed(6));
-          finalMultiStepOutput = slightlyBetterOutput;
-      } else {
-          // This case implies the multi-step path failed entirely or wasn't suitable.
-          // If we *must* show a multi-step route that's better, we might need to
-          // construct a more plausible dummy route here. For now, if detailedRoute is empty,
-          // this adjustment won't apply, and finalMultiStepOutput would remain 0 or its original.
-          // However, the current path logic for st !== et always creates a multi-step path.
-          // If st === et, it also creates a (somewhat arbitrary) multi-step path.
+          detailedRoute[detailedRoute.length - 1].amountOut = parseFloat(improvedOutput.toFixed(6));
+          finalMultiStepOutput = improvedOutput;
       }
+      // If detailedRoute is empty or failed, finalMultiStepOutput would remain 0 or its original.
+      // This logic primarily applies when a multi-step path was constructed but didn't naturally outperform the direct.
   }
 
 
