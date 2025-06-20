@@ -4,9 +4,9 @@ import type { SVGProps } from 'react';
 export function PolyRouteLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      width="32"
+      width="130"
       height="32"
-      viewBox="0 0 32 32"
+      viewBox="0 0 130 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
@@ -31,6 +31,17 @@ export function PolyRouteLogo(props: SVGProps<SVGSVGElement>) {
           <stop offset="1" stopColor="hsl(var(--accent))" />
         </linearGradient>
       </defs>
+      <text
+        x="35"
+        y="16"
+        dominantBaseline="middle"
+        fontFamily="Inter, sans-serif"
+        fontSize="18"
+        fontWeight="600"
+        fill="hsl(var(--foreground))"
+      >
+        PolyRoute
+      </text>
     </svg>
   );
 }
