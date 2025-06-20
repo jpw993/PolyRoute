@@ -34,18 +34,18 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
               style={{ animationDelay: `0s` }}
               role="listitem"
             >
-              <Card className="p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center gap-1 min-w-[100px] md:min-w-[120px] h-full" data-ai-hint={`${startToken.toLowerCase()} crypto token`}>
+              <div className="flex flex-col items-center justify-center gap-1 p-3 md:p-4 min-w-[100px] md:min-w-[120px] h-full" data-ai-hint={`${startToken.toLowerCase()} crypto token`}>
                 <TokenIcon tokenSymbol={startToken} className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                 <span className="text-sm md:text-base font-medium text-foreground truncate">{startToken}</span>
                 <span className="text-xs text-muted-foreground">
                   {initialAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                 </span>
-              </Card>
+              </div>
             </div>
 
             {routeData.route.map((step, index) => (
               <React.Fragment key={`${step.dex}-${step.tokenOutSymbol}-${index}`}>
-                {/* Connecting element: Arrow -> (DEX + Swap Amounts) -> Arrow */}
+                {/* Connecting element: Arrow -> (DEX) -> Arrow */}
                 <div
                   className="flex items-center justify-center text-sm text-muted-foreground opacity-0 animate-route-step-enter"
                   style={{ animationDelay: `${(index * 2 + 1) * 0.25}s` }}
@@ -53,17 +53,10 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
                 >
                   <ArrowRight className="h-5 w-5 mx-1 md:mx-2 shrink-0 text-primary" /> {/* Leading arrow */}
 
-                  {/* DEX name and Swap amounts, arranged vertically */}
+                  {/* DEX name */}
                   <div className="flex flex-col items-center text-center mx-1 md:mx-2">
-                    {/* DEX Name Box */}
-                    <div className="p-2 bg-card border border-border rounded-md shadow-sm min-w-[100px] mb-1.5">
+                    <div className="p-2 bg-card border border-border rounded-md shadow-sm min-w-[100px]">
                       <span className="font-semibold text-xs text-primary">{step.dex}</span>
-                    </div>
-                    {/* Swap Amounts Text */}
-                    <div className="text-xs whitespace-nowrap text-muted-foreground px-2 py-1 bg-secondary/10 rounded-md shadow-sm">
-                      {step.amountIn.toLocaleString(undefined, { maximumFractionDigits: 4 })} {step.tokenInSymbol}
-                      <span className="mx-1.5 font-semibold text-primary">&rarr;</span> {/* HTML right arrow */}
-                      {step.amountOut.toLocaleString(undefined, { maximumFractionDigits: 4 })} {step.tokenOutSymbol}
                     </div>
                   </div>
 
@@ -76,13 +69,13 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
                   style={{ animationDelay: `${(index * 2 + 2) * 0.25}s` }}
                   role="listitem"
                 >
-                  <Card className="p-3 md:p-4 shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center gap-1 min-w-[100px] md:min-w-[120px] h-full" data-ai-hint={`${step.tokenOutSymbol.toLowerCase()} crypto token`}>
+                  <div className="flex flex-col items-center justify-center gap-1 p-3 md:p-4 min-w-[100px] md:min-w-[120px] h-full" data-ai-hint={`${step.tokenOutSymbol.toLowerCase()} crypto token`}>
                     <TokenIcon tokenSymbol={step.tokenOutSymbol} className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                     <span className="text-sm md:text-base font-medium text-foreground truncate">{step.tokenOutSymbol}</span>
                     <span className="text-xs text-muted-foreground">
                       {step.amountOut.toLocaleString(undefined, { maximumFractionDigits: 6 })}
                     </span>
-                  </Card>
+                  </div>
                 </div>
               </React.Fragment>
             ))}
@@ -92,3 +85,4 @@ export function RouteDiagram({ startToken, initialAmount, routeData }: RouteDiag
     </Card>
   );
 }
+
