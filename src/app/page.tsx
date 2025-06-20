@@ -1,8 +1,27 @@
+
+"use client"; // Convert to client component to manage state
+
+import { useState, useEffect } from 'react';
 import ClientPage from './client-page';
 import { Header } from '@/components/routeai/Header';
 import { Footer } from '@/components/routeai/Footer';
+import { AppInitialLoad } from '@/components/routeai/AppInitialLoad';
 
 export default function Home() {
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 2000); // Show loading screen for 2 seconds
+
+    return () => clearTimeout(timer); // Cleanup timer on unmount
+  }, []);
+
+  if (isInitialLoading) {
+    return <AppInitialLoad />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
