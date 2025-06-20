@@ -61,15 +61,15 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     gasEstimate = 0.12;
   } else if (st === 'MATIC' && et === 'DAI') {
     route = [
-      { token: 'USDC', dex: 'Quickswap' },
-      { token: 'DAI', dex: 'Sushiswap' },
+      { token: 'USDC', dex: 'Quickswap' }, // MATIC -> USDC
+      { token: 'DAI', dex: 'Sushiswap' },  // USDC  -> DAI
     ];
     estimatedOutput = amount * 0.995 * 0.99;
     gasEstimate = 0.2;
   } else if (st === 'DAI' && et === 'MATIC') {
      route = [
-      { token: 'USDC', dex: 'Sushiswap' },
-      { token: 'MATIC', dex: 'Quickswap' },
+      { token: 'USDC', dex: 'Sushiswap' }, // DAI -> USDC
+      { token: 'MATIC', dex: 'Quickswap' }, // USDC -> MATIC
     ];
     estimatedOutput = amount * 0.99 * 0.995;
     gasEstimate = 0.2;
@@ -89,11 +89,18 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     route = [{ token: 'WBTC', dex: 'Curve' }];
     estimatedOutput = amount * 0.992;
     gasEstimate = 0.16;
+  } else if (st === 'MATIC' && et === 'AAVE') { // New multi-step route
+    route = [
+      { token: 'USDC', dex: 'Quickswap' },    // MATIC -> USDC
+      { token: 'LINK', dex: 'Sushiswap' },    // USDC  -> LINK
+      { token: 'AAVE', dex: 'AavePortal' }  // LINK  -> AAVE
+    ];
+    estimatedOutput = amount * 0.995 * 0.99 * 0.985; // Simulate multiple step slippage
+    gasEstimate = 0.25; // Higher gas for more steps
   } else {
     // Fallback for unhandled pairs: a single step via a generic DEX
-    // Or return an empty route to indicate no simple path found
     route = [{ token: et, dex: 'GenericDEX' }];
-    estimatedOutput = amount * 0.98; // Simulate higher slippage/fees
+    estimatedOutput = amount * 0.98; 
     gasEstimate = 0.18;
   }
   
@@ -106,3 +113,4 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     gasEstimate: parseFloat(gasEstimate.toFixed(4)),
   };
 }
+
