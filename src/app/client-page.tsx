@@ -86,12 +86,6 @@ export default function ClientPage() {
                   {optimalRoute.route.length > 0 ? optimalRoute.route[optimalRoute.route.length - 1]?.tokenOutSymbol : currentStartToken} 
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-secondary/30 rounded-md">
-                <span className="font-medium text-muted-foreground">Estimated Gas Fee:</span>
-                <span className="font-semibold text-primary">
-                  {optimalRoute.gasEstimate.toLocaleString()} POL
-                </span>
-              </div>
               <div className="pt-4 text-center">
                 <Button 
                   onClick={() => setIsSimulationOpen(true)} 
