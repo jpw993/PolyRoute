@@ -5,7 +5,7 @@ import { AppProviders } from '@/components/routeai/AppProviders';
 
 
 export const metadata: Metadata = {
-  title: 'RouteAI - Optimal DEX Routing',
+  title: 'PolyRoute - Optimal DEX Routing',
   description: 'Find the optimal swap route for token conversions on the Polygon Blockchain.',
 };
 
