@@ -37,18 +37,18 @@ export type FindOptimalRouteOutput = z.infer<typeof FindOptimalRouteOutputSchema
 // Rates are illustrative and simplified, but more realistic
 function calculateSwap(amountIn: number, tokenIn: string, tokenOut: string, dex: string): number {
   // Base exchange rates: 1 tokenIn = X tokenOut
-  // Assuming: 1 POL = $0.70, 1 USDC/DAI/USDT = $1.00, 1 WETH = $3500, 1 WBTC = $60000, 1 LINK = $14, 1 AAVE = $90
+  // Assuming: 1 POL = $0.19, 1 USDC/DAI/USDT = $1.00, 1 WETH = $3500, 1 WBTC = $60000, 1 LINK = $14, 1 AAVE = $90
   const baseRates: Record<string, Record<string, number>> = {
-    POL: { USDC: 0.70, WETH: 0.0002, DAI: 0.70, AAVE: 0.0077, LINK: 0.05, USDT: 0.70 },
-    USDC: { POL: 1.428, DAI: 0.9995, WETH: 0.000285, WBTC: 0.0000166, LINK: 0.0714, AAVE: 0.0111, USDT: 0.9998 },
-    DAI: { POL: 1.428, USDC: 1.0005, WETH: 0.000285, LINK: 0.0714, USDT: 1.0002 },
-    WETH: { POL: 5000, USDC: 3500, DAI: 3495, WBTC: 0.0583, LINK: 250, AAVE: 38.88, USDT: 3500 },
-    WBTC: { POL: 85714, USDC: 60000, WETH: 17.14, LINK: 4285, USDT: 60000 },
-    LINK: { POL: 20, USDC: 14, DAI: 13.98, WETH: 0.004, AAVE: 0.155, USDT: 14 },
-    AAVE: { POL: 128.57, USDC: 90, DAI: 89.9, WETH: 0.0257, LINK: 6.42, USDT: 90 },
-    USDT: { POL: 1.428, USDC: 1.0002, DAI: 0.9998, WETH: 0.000285, WBTC: 0.0000166, LINK: 0.0714, AAVE: 0.0111},
-    UNI: { USDC: 7.5 }, // Placeholder
-    CRV: { USDC: 0.45 }, // Placeholder
+    POL: { USDC: 0.19, WETH: 0.000054, DAI: 0.19, AAVE: 0.0021, LINK: 0.0135, USDT: 0.19 }, // POL approx $0.19
+    USDC: { POL: 1 / 0.19, DAI: 0.9995, WETH: 1 / 3500, WBTC: 1 / 60000, LINK: 1 / 14, AAVE: 1 / 90, USDT: 0.9998 }, // USDC approx $1
+    DAI: { POL: 1 / 0.19, USDC: 1.0005, WETH: 1 / 3500, LINK: 1 / 14, USDT: 1.0002 }, // DAI approx $1
+    WETH: { POL: 1 / 0.000054, USDC: 3500, DAI: 3495, WBTC: 3500 / 60000, LINK: 3500 / 14, AAVE: 3500 / 90, USDT: 3500 }, // WETH approx $3500
+    WBTC: { POL: 1 / (0.19 / 60000) , USDC: 60000, WETH: 60000 / 3500, LINK: 60000 / 14, USDT: 60000 }, // WBTC approx $60000
+    LINK: { POL: 1 / 0.0135, USDC: 14, DAI: 13.98, WETH: 14 / 3500, AAVE: 14 / 90, USDT: 14 }, // LINK approx $14
+    AAVE: { POL: 1 / 0.0021, USDC: 90, DAI: 89.9, WETH: 90 / 3500, LINK: 90 / 14, USDT: 90 }, // AAVE approx $90
+    USDT: { POL: 1 / 0.19, USDC: 1.0002, DAI: 0.9998, WETH: 1 / 3500, WBTC: 1 / 60000, LINK: 1 / 14, AAVE: 1 / 90}, // USDT approx $1
+    UNI: { USDC: 7.5 }, 
+    CRV: { USDC: 0.45 }, 
   };
 
   let exchangeRate = 0.92; // Default fallback rate for unlisted pairs (less favorable)
@@ -195,3 +195,4 @@ export async function findOptimalRoute(input: FindOptimalRouteInput): Promise<Fi
     gasEstimate: parseFloat(gasEstimate.toFixed(4)),
   };
 }
+
