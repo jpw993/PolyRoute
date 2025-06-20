@@ -16,7 +16,7 @@ export function RouteDiagram({ title = "Optimal Swap Route", startToken, initial
 
   return (
     <div className="shadow-xl overflow-hidden bg-card rounded-lg">
-      <div className="p-6"> 
+      <div className="px-6 py-4"> 
         <h2 className="text-2xl font-headline text-center text-primary">{title}</h2>
       </div>
       <div className="px-2 py-4 md:px-4">
