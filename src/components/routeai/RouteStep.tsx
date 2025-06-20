@@ -16,7 +16,7 @@ interface RouteStepProps {
 export function RouteStep({ isFirst = false, token, dex, animationDelay, 'data-ai-hint': aiHint }: RouteStepProps) {
   return (
     <div
-      className="flex items-center opacity-0 animate-route-step-เข้ามา" // Use Tailwind animation class, keep opacity-0 for initial state
+      className="flex items-center opacity-0 animate-route-step-enter" // Use Tailwind animation class
       style={{ animationDelay }} // animation-duration and fill-mode are in tailwind.config.ts
       data-testid={`route-step-${token}`}
     >
@@ -37,11 +37,11 @@ export function RouteStep({ isFirst = false, token, dex, animationDelay, 'data-a
   );
 }
 
-// Keyframes and animation utility 'animate-route-step-เข้ามา' are defined in tailwind.config.ts
-// @keyframes route-step-เข้ามา {
+// Keyframes and animation utility 'animate-route-step-enter' are defined in tailwind.config.ts
+// @keyframes route-step-enter {
 //   '0%': { opacity: '0', transform: 'translateY(10px)' },
 //   '100%': { opacity: '1', transform: 'translateY(0)' },
 // }
 // animation: {
-//   'route-step-เข้ามา': 'route-step-เข้ามา 0.5s ease-out forwards',
+//   'route-step-enter': 'route-step-enter 0.5s ease-out forwards',
 // }
