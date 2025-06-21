@@ -1,6 +1,18 @@
 # PolyRoute
 
-PolyRoute is a Next.js application designed to find the optimal swap route for token conversions on the Polygon Blockchain. It leverages AI to analyze different DEXes and provide users with the most efficient trading paths.
+PolyRoute is dApp find the optimal swap route for token conversions on the Polygon Blockchain. It leverages AI to analyze different exchanges and provide users with the most efficient trading paths.
+
+## Links
+
+- **Website**: https://studio--routeai-59fbv.us-central1.hosted.app
+- **Demo video**: https://youtu.be/bx2Az80OGA8
+- **Pitch deck**: https://brieflink.com/v/yxiqk
+
+## Prompt Coding Tools
+- **Web App**: Firebase Studio
+- **Smart Contract**: ChatGPT
+- **Logo image**: ChatGPT
+
 
 ## Core Features
 
@@ -12,10 +24,10 @@ PolyRoute is a Next.js application designed to find the optimal swap route for t
 
 ## Tech Stack
 
-- **Framework**: Next.js (App Router)
+- **Framework**: Next.js
 - **UI**: React, ShadCN UI, Tailwind CSS
 - **AI**: Genkit
-- **Blockchain Interaction**: Ethereum (Polygon Mainnet)
+- **Blockchain Interaction**: Ethereum (Polygon Mainnet), smart contract in Solidity (Foundry project)
 
 ## Getting Started
 
