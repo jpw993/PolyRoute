@@ -1,6 +1,6 @@
 # PolyRoute
 
-PolyRoute is dApp find the optimal swap route for token conversions on the Polygon Blockchain. It leverages AI to analyze different exchanges and provide users with the most efficient trading paths.
+PolyRoute is dApp to find the optimal swap route for token conversions on the Polygon Blockchain. It leverages AI to analyze different exchanges and provide users with the most efficient trading paths.
 
 ## Links
 
